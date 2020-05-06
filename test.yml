@@ -1,0 +1,107 @@
+
+
+test:
+    global:
+		    bpm:  146.
+		    notes_per_beat: 4.
+		    beats_per_chord: 2.
+		    plot_every: 1
+		    title:  'test'
+        output_path: 'output/test'
+
+
+		# Giant steps:
+		scales = [
+			'Bmaj7', 'D7', 'Gmaj7', 'Bb7', 'Ebmaj7','Ebmaj7', 'Amin7', 'D7',
+			'Gmaj7', 'Bb7', 'Ebmaj7', 'F#7', 'Bmaj7','Bmaj7', 'Fmin7', 'Bb7',
+			'Ebmaj7', 'Ebmaj7','Amin7', 'D7', 'Gmaj7', 'Gmaj7', 'C#min7', 'F#7',
+			'Bmaj7', 'Bmaj7', 'Fmin7', 'Bb7', 'Ebmaj7', 'Ebmaj7', 'C#min7', 'F#7',
+			]
+		melody = [
+			'B_major', 'D_7', 'G_major', 'Bb_7', 'Eb_major','Eb_major', 'A_minor_7', 'D_7',
+			'G_major', 'Bb_7', 'Eb_major', 'F#_7', 'B_major','B_major', 'F_minor_7', 'Bb_7',
+			'Eb_major', 'Eb_major','A_minor_7', 'D_7', 'G_major', 'G_major', 'C#_minor_7', 'F#_7',
+			'B_major', 'B_major', 'F_minor_7', 'Bb_7', 'Eb_major', 'Eb_major', 'C#_minor_7', 'F#_7',
+			]
+
+		#scales = ['A_minor_harmonic', ]
+		jobs = ['u-an869','u-ak900','u-ar538','u-ar783','u-au835','u-av450','u-aj588']
+		# [ 'u-aj588', 'u-ak900', 'u-an869', 'u-ar538', 'u-ar538', 'u-ar783', 'u-au835', 'u-av450']
+
+		scroll = 0.
+
+		fields = [
+			'AMOC',
+			'NorthernTotalIceExtent',
+			'ArcticAirSeaCO2Flux',
+			'ArcticOceanVolumeMeanTemperature',
+			'ArcticSurfaceDIC',
+			'ArcticMeanChlorophyll',
+			]
+		scales = {field: scales for field in fields}
+		scales['AMOC'] = melody
+		#scales['GlobalMeanChlorophyll'] = melody
+
+		#'SouthernOceanMeanTemperature','Chlorophyll, Global, 100m deep', 'Iron, Global, Surface', 'Oxygen, No Inland Seas, 500m deep', 'Total Integrated Primary Production',
+		#'Salinity, Global, Surface',
+		#'Global Volume-weighted Mean Temperature']
+		music_ranges = {
+			'AMOC': [60, 96],
+			'NorthernTotalIceExtent': [32, 96],
+			'ArcticAirSeaCO2Flux': [32, 72],
+			'ArcticOceanVolumeMeanTemperature': [32, 96],
+			'ArcticSurfaceDIC': [32, 96],
+			'ArcticMeanChlorophyll': [48, 80],
+			}
+		moving_averages = {
+			'AMOC': 30,
+			'NorthernTotalIceExtent': 60,
+			'ArcticAirSeaCO2Flux': 60,
+			'ArcticOceanVolumeMeanTemperature': 60,
+			'ArcticSurfaceDIC': 60,
+			'ArcticMeanChlorophyll': 60,
+			}
+		velocity_fields = {
+			'AMOC': 'NorthernTotalIceExtent',
+			'NorthernTotalIceExtent': 'NorthernTotalIceExtent',
+			'ArcticAirSeaCO2Flux': 'NorthernTotalIceExtent',
+			'ArcticOceanVolumeMeanTemperature': 'NorthernTotalIceExtent',
+			'ArcticSurfaceDIC': 'NorthernTotalIceExtent',
+			'ArcticMeanChlorophyll': 'NorthernTotalIceExtent',
+			}
+		velocity_ranges  = {
+			'AMOC': [ 85, 127],
+			'NorthernTotalIceExtent': [ 65, 110],
+			'ArcticAirSeaCO2Flux': [ 65, 110],
+			'ArcticOceanVolumeMeanTemperature': [ 65, 110],
+			'ArcticSurfaceDIC': [ 65, 110],
+			'ArcticMeanChlorophyll': [ 65, 110],
+			}
+		data_ranges = {
+			}
+		colours = {
+			'AMOC': 'tab:purple',
+			'NorthernTotalIceExtent': 'tab:blue',
+			'ArcticAirSeaCO2Flux': 'tab:red',
+			'ArcticOceanVolumeMeanTemperature': 'tab:orange',
+			'ArcticSurfaceDIC': 'tab:pink',
+			'ArcticMeanChlorophyll': 'tab:green',
+			}
+		labels = {
+			'AMOC': 'Atlantic Meridional Overturning Current',
+			'NorthernTotalIceExtent': 'Arctic Total Ice Extent',
+			'ArcticAirSeaCO2Flux': 'Arctic Ocean Mean Air Sea Flux of CO2',
+			'ArcticOceanVolumeMeanTemperature': 'Volume Weighted Mean Arctic Ocean Temperature',
+			'ArcticSurfaceDIC': 'Arctic Ocean Mean Dissolved Inorganic Carbon',
+			'ArcticMeanChlorophyll': 'Arctic Ocean Surface Mean Chlorophyll',
+			}
+		units = {
+			'AMOC': 'Tg s-1',
+			'NorthernTotalIceExtent': '1E6 km^2',
+			'ArcticAirSeaCO2Flux': 'g C /m^2 /day',
+			'ArcticOceanVolumeMeanTemperature':'degrees C',
+			'ArcticSurfaceDIC': 'mmol C/ m^3',
+			'ArcticMeanChlorophyll':  'mg C/m^3',
+			}
+		positions = {
+			}
