@@ -2,8 +2,8 @@
 from midiutil.MidiFile import MIDIFile
 
 
-class midinotes:
-    def __init__(self, track, channel, pitch, time, duration, volume):
+class midinote:
+    def __init__(self, track=0, channel=0, pitch=0, time=0, duration=0, volume=0):
         self.track = track
         self.channel = channel
         self.pitch = pitch
@@ -14,35 +14,57 @@ class midinotes:
 def save_midi(title, tempo, tracks, path):
         """
         Saving the miodi file.
-        The tracks are a dict of notes.
+        The tracks are a dict of midinotes.
+            tracks = {trackname: {midinotes, tempo}}
         """
 
         # Create the MIDIFile Object with 1 track
-        MyMIDI = MIDIFile()
-
-        # Tracks are numbered from zero. Times are measured in beats.
-        track = 0
-        time = 0
+        MyMIDI = MIDIFile(len(list(tracks.keys())))
 
         # Add track name and tempo.
-        MyMIDI.addTrackName(track,time,"Sample Track")
-        MyMIDI.addTempo(track,time,120)
+        for track_number, track_name in enumerate(sorted(tracks.keys())):
+            MyMIDI.addTrackName(track_number, 0, track_name)
+            MyMIDI.addTempo(track_number , 0, tempo)
 
-        # Add a note. addNote expects the following information:
-        track = 0
-        channel = 0
-        pitch = 60
-        time = 0
-        duration = 1
-        volume = 100
-
-        # Now add the note.
-        MyMIDI.addNote(track,channel,pitch,time,duration,volume)
+            # Add the notes.
+            for note in tracks[track_name]:
+                MyMIDI.addNote(
+                    note.track,
+                    note.channel,
+                    note.pitch,
+                    note.time,
+                    note.duration,
+                    note.volume)
 
         # And write it to disk.
-        binfile = open("output.mid", 'wb')
+        print(('Saving midi file:', path))
+        binfile = open(path, 'wb')
         MyMIDI.writeFile(binfile)
         binfile.close()
+
+def test_midi():
+    # create a test midi
+    title = 'Test MIDI'
+    tempo= 154
+    tracks = {}
+    for track in range(17):
+        notes = []
+        for value in range(0,127):
+            note = midinote(
+             track=track,
+             channel=track,
+             pitch=value,
+             time=value/2.,
+             duration=0.5,
+             volume=120
+            )
+            notes.append(note)
+        tracks['track '+ str(track)] = notes
+    path = "output/test_midi.mid"
+
+    save_midi(title, tempo, tracks, path)
+
+
 
 def value_to_pitch(value, data_range, music_range, debug=False):
 	"""
@@ -51,7 +73,7 @@ def value_to_pitch(value, data_range, music_range, debug=False):
 
 	Note that it returns pitch as a float, not a int.
 	"""
-	if debug: print(value, data_range, music_range)
+	if debug: print((value, data_range, music_range))
 	data_extent = data_range[1] - data_range[0]
 	music_extent = music_range[1] - music_range[0]
 
@@ -59,7 +81,7 @@ def value_to_pitch(value, data_range, music_range, debug=False):
 
 	pitch = (fraction * music_extent) + music_range[0]
 	if np.isnan(pitch):
-		print "value_to_pitch:", value, pitch, data_range, music_range
+		print(("value_to_pitch:", value, pitch, data_range, music_range))
 		assert 0
 	return pitch
 
@@ -102,7 +124,7 @@ def remove_doubles(midinotes, notes_per_beat = 4, beats_per_chord=4, dont_remove
 	notes_removed = 1
 	t0 = midinotes[0][0]
 	for i, note in enumerate(midinotes):
-		print("remove_doubles", i, note)
+		print(("remove_doubles", i, note))
 		if np.ma.is_masked(note):
 			midinotes_out.append(note)
 			continue
@@ -139,7 +161,7 @@ def remove_doubles(midinotes, notes_per_beat = 4, beats_per_chord=4, dont_remove
 		else:
 			midinotes_out.append(note)
 
-	return 	midinotes_out
+	return midinotes_out
 
 
 def change_velocity(midinotes, velocities, vel_range = [75, 127]):
@@ -149,8 +171,8 @@ def change_velocity(midinotes, velocities, vel_range = [75, 127]):
 	midinotes_out = []
 
 	if velocities.min() == velocities.max():
-		print "velocities failed", velocities
-		print velocities.min(), velocities.max()
+		print(("velocities failed", velocities))
+		print((velocities.min(), velocities.max()))
 		assert 0
 	velocities = np.ma.masked_invalid(velocities)
 
@@ -160,7 +182,7 @@ def change_velocity(midinotes, velocities, vel_range = [75, 127]):
 			midinotes_out.append(note)
 			continue
 		if note[1] and np.ma.is_masked(velocities[i]):
-			print "change_velocity: note exists, velocity does not:", note[1], np.ma.is_masked(velocities[i])
+			print(("change_velocity: note exists, velocity does not:", note[1], np.ma.is_masked(velocities[i])))
 			assert 0
 		velocity = value_to_pitch(velocities[i],
 					[velocities.min(),velocities.max()],
@@ -180,45 +202,43 @@ def change_velocity(midinotes, velocities, vel_range = [75, 127]):
 		out_vels.append(velocity)
 		midinotes_out.append(note)
 
-	return 	midinotes_out
+	return midinotes_out
 
 
 
 
-def create_midinotes(times, data, time_range, data_range, music_range, notes_per_beat = 4):
-	"""
-	Create a set of musical notes.
-
-	Note that these pitches are still floats.
-	"""
-	midinotes = []
-	data = np.ma.masked_invalid(data)
-	if len(times) != len(data):
-		print("create_midinotes: times and data have wrong durations:", len(times), len(data))
-		assert False
-
-	t_min = 1E20
-	for i, da in enumerate(data):
-		if np.ma.is_masked(da):
-			midinotes.append(da)
-			continue
-		pitch = value_to_pitch(da, data_range, music_range)
-		time, duration = time_to_placement(times[i], time_range, notes_per_beat)
-		if time < t_min: t_min = time.copy()
-		note = [
-			time, 		# time
-			pitch, 		#60 is middle C (C5)
-			127, 		#velocity_range(t*1000), 	# velocity
-			duration]
-		midinotes.append(note)
-
-
-	for i, note in enumerate(midinotes):
-	    print i, midinotes[i][0], '->',
-	    midinotes[i][0] -= t_min
-	    print midinotes[i][0]
-	#assert 0
-	return midinotes
+# def create_midinotes(times, data, time_range, data_range, music_range, notes_per_beat = 4):
+# 	"""
+# 	Create a set of musical notes.
+#
+# 	Note that these pitches are still floats.
+# 	"""
+# 	midinotes = []
+# 	data = np.ma.masked_invalid(data)
+# 	if len(times) != len(data):
+# 		print("create_midinotes: times and data have wrong durations:", len(times), len(data))
+# 		assert False
+#
+# 	t_min = 1E20
+# 	for i, da in enumerate(data):
+# 		if np.ma.is_masked(da):
+# 			midinotes.append(da)
+# 			continue
+# 		pitch = value_to_pitch(da, data_range, music_range)
+# 		time, duration = time_to_placement(times[i], time_range, notes_per_beat)
+# 		if time < t_min: t_min = time.copy()
+# 		note = [
+# 			time, 		# time
+# 			pitch, 		#60 is middle C (C5)
+# 			127, 		#velocity_range(t*1000), # velocity
+# 			duration]
+#     midinotes.append(note)
+#
+#     for i, note in enumerate(midinotes):
+#         midinotes[i][0] -= t_min
+#         print(i, midinotes[i][0], '->', midinotes[i][0])
+#         #assert 0
+#     return midinotes
 
 def strip_mask(midinotes):
 	"""
@@ -251,7 +271,7 @@ def long_last_note(midinotes):
 			continue
 		midinotes[i][3] += 8.
 		found = True
-		print "long_last_note:", found, i, midinotes[i]
+		print(("long_last_note:", found, i, midinotes[i]))
 	return midinotes
 
 
@@ -281,13 +301,13 @@ def remove_duplicates(midinotes_list):
 		if len(notes) == 1:
 			midinotes.append(notes[0])
 		else:
-			print("Found duplicates:", notes)
+			print(("Found duplicates:", notes))
 			vel = max([note[2] for note in notes])
 			dur = max([note[3] for note in notes])
 			note = [tup[0], tup[1], vel, dur]
 			midinotes.append(note)
 	#assert 0
-	return 	[midinotes, ]
+	return [midinotes, ]
 
 
 def convert_notes_to_data(midinotes, data_range, music_range):
@@ -332,11 +352,11 @@ def calculate_moving_average(times,data, window_len=5.,window_units='years', fie
 	######
 	#
 	window_units = window_units.lower()
-	if window_units not in ['days','months','years']:
-     	   	raise ValueError("calculate_moving_average: window_units not recognised"+str(window_units))
+#	if window_units not in ['days','months','years']:
+#        raise ValueError("calculate_moving_average: window_units not recognised"+str(window_units))
 
-        data = np.ma.array(data)
-        times= np.ma.array(times)
+	data = np.ma.array(data)
+	times= np.ma.array(times)
 
 	#####
 	# Assuming time
@@ -357,10 +377,14 @@ def calculate_moving_average(times,data, window_len=5.,window_units='years', fie
 		for i,t in enumerate(times):
 			if i > len(window_len)-1: continue
 			window = float(window_len[i])/2.
-			print(i, t, window, len(times), len(window_len))
+			print((i, t, window, len(times), len(window_len)))
 
 			tmin = t-window
 			tmax = t+window
 			arr = np.ma.masked_where((times < tmin) + (times > tmax) + data.mask, data)
 			output.append(arr.mean())
 		return np.ma.array(output)
+
+
+if __name__ == "__main__":
+    test_midi()
