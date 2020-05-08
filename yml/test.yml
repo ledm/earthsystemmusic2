@@ -1,0 +1,31 @@
+
+
+
+global:
+    title: 'test'
+    output_path: 'output/test'
+    bpm: 146.
+    # graphical options:
+    plot_every: 1
+    scroll: 0.
+
+tracks:
+    track1:
+      longname: 'test track 1'
+      units: 'unitless'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['C_major', ]
+      data_paths: [./data/shelves/TotalIntegratedPrimaryProduction.shelve, ]
+      # type options [ shelve, nc, csv]
+      data_type: 'shelve'
+      data_key:  ('regionless', 'layerless', 'metricless')
+      data_kwargs: ''
+      music_range: [72, 96]
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: []
+      moving_average: 0
+      velocity_range:  [100, 127]
+      colour: 'blue'
+      label_positions:  []
