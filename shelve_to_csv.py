@@ -2,6 +2,7 @@
 
 from shelve import open as shopen
 import os
+import numpy as np
 
 
 def load_shelve(path, data_key):
@@ -26,7 +27,7 @@ def get_output_folder(name):
 def save_as_csv(field, jobID, units, label, data):
     """Convert data diuct to a csv file"""
 
-    out_fn = get_output_folder('csv/'+name)+jobID+'_'+field+'.csv'
+    out_fn = get_output_folder('csv/'+field)+jobID+'_'+field+'.csv'
     if os.path.exists(out_fn):
         print('Already exists:', out_fn)
         #return
@@ -98,3 +99,4 @@ def main():
             path = get_path(jobID, field)
             data = load_shelve(path, data_key)
             save_as_csv(field, jobID, units[field], labels[field], data)
+main()
