@@ -2,6 +2,9 @@
 import os
 import yaml
 from shelve import open as shopen
+import csv
+
+
 
 
 
@@ -35,8 +38,18 @@ def load_csv(track_dict, path):
     """
     Load the data from a csv file.
     """
-    print("load_csv: not implemented yet")
-    assert 0
+    #print("load_csv: not implemented yet")
+    #assert 0
+    data = {}
+    csv_file = open(path)
+    for row in csv_file.readlines():
+        if row[0] == '#': continue
+        if row == '\n': continue
+        if row.lower().find('year') > -1: continue
+        row = row.split(',')
+        #print(row)
+        data[float(row[0])] = float(row[1])
+    return data
 
 
 def load_shelve(track_dict, path):
@@ -50,7 +63,7 @@ def load_shelve(track_dict, path):
     sh.close()
     return shelve_data
 
-def apply_kwargss(track_dict, track_data, ):
+def apply_kwargs(track_dict, track_data, ):
     """
     Apply key word arguments to manipulate the data.
     ie, apply a fix, or retime the spin up, etc.
@@ -58,32 +71,6 @@ def apply_kwargss(track_dict, track_data, ):
     return track_dict
 
 
-def load_track(track, track_dict):
-    """
-    Load a track from the track dict
-    """
-    print('Trying to load:', track_dict['data_paths'])
-
-    if isinstance(track_dict['data_paths'], str):
-        track_dict['data_paths'] = [track_dict['data_paths'], ]
-
-    # data dict: it's always in format data['time'] = data value.
-    data = {}
-    for path in track_dict['data_paths']:
-        print('Loading', path)
-        if track_dict['data_type'] == 'shelve':
-            track_data = load_shelve(track_dict, path)
-        elif track_dict['data_type'] in ['nc', 'netcdf']:
-            track_data = load_netcdf(track_dict, path)
-            assert 0
-        elif track_dict['data_type'] in ['csv']:
-            track_data = load_csv(track_dict, path)
-            assert 0
-
-        track_data = apply_kwargs(track_dict, track_data, )
-        data.update(track_data)
-    print(data)
-    return data
 
 
 
@@ -101,6 +88,100 @@ def load_yml(yml_fn):
         my_dict = yaml.safe_load(f)
     return my_dict
 
+def calculate_moving_average(data, track_dict):
+    ######
+    #
+    moving_average = track_dict['moving_average']
+    if moving_average in ['', [], None]:
+        return data
+    if isinstance(moving_average, str):
+        window_width, window_units = moving_average.split(' ')
+    window_units = window_units.lower()
+    if window_units not in ['days','months','years']:
+        raise ValueError("calculate_moving_average: window_units not recognised"+str(window_units))
+
+    times = np.array([t for t in sorted(data.keys())])
+    data = np.array([data[t] for t in times])
+
+    data = np.ma.array(data)
+    times= np.ma.array(times)
+
+    #####
+    # Assuming time
+    output = {}
+    if type(window_len) in [float, int]:
+        if window_units in ['years',]:	window = float(window_len)/2.
+        if window_units in ['months',]:	window = float(window_len)/(2.*12.)
+        if window_units in ['days',]:	window = float(window_len)/(2.*365.25)
+        for i,t in enumerate(times):
+            tmin = t-window
+            tmax = t+window
+            arr = np.ma.masked_where((times < tmin) + (times > tmax) + data.mask, data)
+            output[t] = arr.mean()
+
+    if type(window_len) in [list, tuple, dict]:
+        for i,t in enumerate(times):
+            if i > len(window_len)-1: continue
+            window = float(window_len[i])/2.
+            print((i, t, window, len(times), len(window_len)))
+
+            tmin = t-window
+            tmax = t+window
+            arr = np.ma.masked_where((times < tmin) + (times > tmax) + data.mask, data)
+
+            output[t] = arr.mean()
+
+    return output
+
+
+
+
+class settings:
+    def __init__(self, yml_fn):
+        """
+        Create a settings dictionairy for the yml file.
+        """
+        self.fn = yml_fn
+        #self. yml is the yml dict.
+        self.yml = load_yml(yml_fn)
+        self.globals = self.yml['global']
+        self.tracks = self.yml['tracks']
+        for track, track_dict in self.tracks.items():
+            # Load track data
+            paths = track_dict['data_paths']
+            self.tracks[track]['data'] = self.load_track(track, paths)
+
+            # Load track velocity data.
+            vel_paths = track_dict['velocity_paths']
+            self.tracks[track]['velocity_data'] = self.load_track(track,vel_paths )
+
+    def load_track(self, track, paths):
+        """
+        Load a track from the track dict.
+        """
+        track_dict =  self.tracks[track]
+        print('Trying to load:', track, paths)
+
+        if isinstance(paths, str):
+            paths = [paths, ]
+
+        data = {}
+        for path in paths:
+            print('Loading', path)
+            if track_dict['data_type'] == 'shelve':
+                track_data = load_shelve(track_dict, path)
+            elif track_dict['data_type'] in ['nc', 'netcdf']:
+                track_data = load_netcdf(track_dict, path)
+                assert 0
+            elif track_dict['data_type'] in ['csv']:
+                track_data = load_csv(track_dict, path)
+
+            track_data = apply_kwargs(track_dict, track_data, )
+            data.update(track_data)
+
+        data = calculate_moving_average(data, track_dict)
+        print(data)
+        return data
 
 def test_global(yml):
     """
@@ -108,7 +189,7 @@ def test_global(yml):
     """
     print('Testing global dict:')
     globals = yml['global']
-    global_keys =  ['title', 'output_path', 'bpm', 'plot_every' ]
+    global_keys =  ['name', 'output_path', 'bpm', 'plot_every' ]
     for key in global_keys:
         print('test', key, globals[key])
     print('Test Global dict: Success')
@@ -123,7 +204,7 @@ def test_tracks(yml):
         # notes_per_beat: 4.
         # beats_per_chord: 2.
         # plot_every: 1
-        # title: 'test'
+        # name: 'test'
         # output_path: 'output/test'
     tracks = yml['tracks']
     for track, track_dict in tracks.items():
@@ -139,9 +220,15 @@ def ymltest():
     print('Testing', test_yml_fn)
     test_global(yml)
     test_tracks(yml)
-    for track, track_dict in yml['tracks'].items():
-        data = load_track(track, track_dict)
-    print('Test yml: Success')
+    #for track, track_dict in yml['tracks'].items():
+    #    data = load_track(track, track_dict)
+    #print('Test yml: Success')
+
+    print('Test settings class:')
+    setting = settings(test_yml_fn)
+    #print(setting)
+    print('Test setting: Success')
+
 
 if __name__ == "__main__":
     ymltest()

@@ -2,7 +2,7 @@
 
 
 global:
-    title: 'test'
+    name: 'test'
     output_path: 'output/test'
     bpm: 146.
     # graphical options:
@@ -16,16 +16,17 @@ tracks:
       notes_per_beat: 4.
       beats_per_chord: 2.
       scales: ['C_major', ]
-      data_paths: [./data/shelves/TotalIntegratedPrimaryProduction.shelve, ]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-aw310_TotalIntegratedPrimaryProduction.csv, ]
+      velocity_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-aw310_TotalIntegratedPrimaryProduction.csv,]
       # type options [ shelve, nc, csv]
-      data_type: 'shelve'
-      data_key:  ('regionless', 'layerless', 'metricless')
-      data_kwargs: ''
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
       music_range: [72, 96]
       # data range: set min/max data range to match music range
       # blank means
       data_range: []
-      moving_average: 0
+      moving_average: '10 years'
       velocity_range:  [100, 127]
       colour: 'blue'
       label_positions:  []
