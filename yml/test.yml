@@ -3,6 +3,7 @@
 
 global:
     name: 'test'
+    title: 'Testing yml midi'
     output_path: 'output/test'
     bpm: 146.
     # graphical options:
@@ -12,7 +13,8 @@ global:
 tracks:
     track1:
       longname: 'test track 1'
-      units: 'unitless'
+      channel: 1
+      units: 'Pg/yr'
       notes_per_beat: 4.
       beats_per_chord: 2.
       scales: ['C_major', ]
@@ -22,11 +24,35 @@ tracks:
       data_type: 'csv'
       data_key:  None
       data_kwargs: []
-      music_range: [72, 96]
+      # Music range, required. CAn be a part of ints or an instrument str
+      music_range: Flute
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: []
+      moving_average: '4 years'
+      velocity_range:  [100, 127]
+      colour: 'blue'
+      label_positions:  []
+    track2:
+      longname: 'test track 2'
+      channel: 2
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      play_new_chords: True
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-aw310_TotalIntegratedPrimaryProduction.csv, ]
+      velocity_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-aw310_TotalIntegratedPrimaryProduction.csv,]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      music_range: Clarinet
       # data range: set min/max data range to match music range
       # blank means
       data_range: []
       moving_average: '10 years'
       velocity_range:  [100, 127]
-      colour: 'blue'
+      colour: 'green'
       label_positions:  []
