@@ -208,20 +208,14 @@ class settings:
             paths = track_dict['data_paths']
             self.tracks[track]['data'] = self.load_track(track, paths)
 
-            # Load track velocity data.
-            vel_paths = track_dict.get('velocity_paths', None)
-            if vel_paths:
-                self.tracks[track]['volumes'] = self.load_track(track,vel_paths )
-            else:
-                self.tracks[track]['volumes'] = {
-                    t:120 for t in self.tracks[track]['data']['times']
-                    }
-
             # Create pitches dict.
             self.create_pitches(track)
 
             # Create time dict:
             self.create_locations(track)
+
+            # Create volume dict:
+            self.create_volumes(track)
 
             # Create scale in time:
             self.determine_scales(track)
@@ -269,11 +263,6 @@ class settings:
         times = np.ma.array([t for t in sorted(data.keys())])
         data = np.ma.array([data[t] for t in times])
 
-        data_range =  track_dict.get('data_range', None)
-        if not data_range:
-            data_range = [data.min(), data.max()]
-            track_dict['data_range'] = data_range
-
         time_range =  track_dict.get('time_range', None)
         if not time_range:
             time_range = [times.min(), times.max()]
@@ -300,11 +289,14 @@ class settings:
         if isinstance(music_range, str):
             self.tracks[track]['music_range'] = instrument_range[music_range]
 
+        # Check whether a data range was provided.
+        if not self.tracks[track].get('data_range', None):
+            datrange = list(self.tracks[track]['data'].values())
+            data_range = [min(datrange), max(datrange)]
+            self.tracks[track]['data_range'] = data_range
+
         pitches = {}
         for time, dat in self.tracks[track]['data'].items():
-            if np.ma.is_masked(dat):
-                midinotes.append(dat)
-                continue
             pitch = value_to_pitch(dat,
                                    self.tracks[track]['data_range'],
                                    self.tracks[track]['music_range'])
@@ -336,12 +328,39 @@ class settings:
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
 
+    def create_volumes(self, track):
+        """
+        Create a dict for volumes from data.
+        """
+        # Load track volume data.
+        vel_paths = self.tracks[track].get('volume_paths', None)
+        vol_range = self.tracks[track].get('volume_range', 120)
+
+        if not vel_paths:
+            # No data is provided for volume, set a flat volume curve.
+            self.tracks[track]['volumes'] = {
+                t:max(vol_range) for t in self.tracks[track]['data']['times']
+            }
+            return
+
+        volumes_data = self.load_track(track, vel_paths )
+        volumes_data_range = list(volumes_data.values())
+        volumes_data_range = [min(volumes_data_range), max(volumes_data_range)]
+        volumes = {}
+        for time, dat in volumes_data.items():
+            volume = value_to_pitch(dat,
+                                    volumes_data_range,
+                                    vol_range)
+            if self.debug:
+                print("volume:", time, volume)
+            volumes[time] = volume
+        self.tracks[track]['volumes'] = volumes
+
     def determine_scales(self, track):
         """
         Using the times, determinues which scale is linked with each note.
 
         Uses the scale list to guess which scale is associated with each time.
-
         """
         beats_per_chord = self.tracks[track]['beats_per_chord']
         scale_list = self.tracks[track]['scales']
@@ -353,7 +372,6 @@ class settings:
             scale_num = (int(loc/float(beats_per_chord)))%len(scale_list)
             #print(note[0], beats_per_chord, len(scales))
             scales[time] = scale_list[scale_num]
-
         self.tracks[track]['scales'] = scales
 
     def modulate_to_scale(self, track):
@@ -370,12 +388,11 @@ class settings:
             pitches[time] = pitch
             if self.debug:
                 print(time, floatpitch, scale, '->', pitch )
-
         self.tracks[track]['pitches'] = pitches
 
     def remove_doubles(self, track):
         """
-        Remove successive duplicates in the pitch, loc, velocity, duration
+        Remove successive duplicates in the pitch, loc, volume, duration
         dicts.
 
         Unlike the old vesrion, we do this in place now, instead of creating a new list.
