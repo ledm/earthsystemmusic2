@@ -1,5 +1,5 @@
 
-instrument_range = {
+standard_ranges = {
     # Strings
     'Violin': [55, 103],
     'Viola': [48, 91],
@@ -46,35 +46,76 @@ instrument_range = {
     'Harpsichord': [29, 89],
     'Harp': [24, 103],
 
+    # VSCO:
     'Flute':  [55, 88],
     'Clarinet': [50,  84],
 }
 
 
-VSCO_channels = {
-    'Flue':  1,
-    'Clarinet': 2,
-    'Bassoon': 3,
-    'Horn': 4,
-    'Trumpet': 5,
-    'Tenor Bone': 6,
-    'Bass Bone': 7,
-    'Timpani': 8,
-    'Xylophone': 8,
-    'Chimes': 9,
-    'Glockenspiel': 9,
-    'Orchestral percussion': 10,
-    'Harp': 11,
-    'Violin': 12,
-    'Violin section': 13,
-    'Piano': 14,
+
+
+Kontakt_ranges = {
+
+}
+Kontakt_channels = {
+    'Chords'
 }
 
 
+
+SINE_ranges = {
+    'Full Orchestra': [],
+}
+SINE_channels = {
+    'Chords Maj Sustain': 0,
+    'Chords Min Sustain': 1,
+    'Chords Sus4 Sustain': 2,
+    'Chords Maj Staccato': 3,
+    'Chords Min Staccato': 4,
+    'Chords Sus4 Staccato': 5,
+    'Sustains Low Unison': 6,
+    'Staccato Low Unison': 7,
+}
+
+# Versillian Chamber orcestra.
+# does weird stuff with changing articulation. (yellow keys as a trigger)
+Sketch_ranges = {
+    'Cello section': [36, 79],
+    'Double Bass': [24, 60],
+    'Viola section': [48, 88],
+    'Violin':[67, 112],
+    'Violin section': [67, 101],
+}
+Sketch_channels = {
+    'Chords': '',
+}
+
+VSCO_channels = {
+    # Note that these are the values that the VST uses.
+    # Python MISI uses 0-15 instead of 1-16.
+    'Flue':     1,
+    'Clarinet': 2,
+    'Bassoon':  3,
+    'Horn':     4,
+    'Trumpet':  5,
+    'Tenor Bone': 6,
+    'Bass Bone': 7,
+    'Timpani':  8,
+    'Xylophone': 8,
+    'Chimes':   9,
+    'Glockenspiel': 9,
+    'Orchestral percussion': 10,
+    'Harp':     11,
+    'Violin':   12,
+    'Violin section': 13,
+    'Piano':    14,
+}
+
+# Different vst's have different ranges and instruments.
 VSCO_ranges = {
     'Flute':  [55, 88],
     'Clarinet': [50,  84],
-    'Bassoon': 3,
+    'Bassoon': [36, ],
     'Horn': 4,
     'Trumpet': 5,
     'Tenor Bone': 6,
@@ -89,6 +130,11 @@ VSCO_ranges = {
     'Violin section': 13,
     'Piano': 14,
 }
+
+
+instrument_range = {'VSCO': VSCO_ranges}
+instrument_channels = {'VSCO': {instrument: channel -1 for instrument: channel in VSCO_channels}}
+
 
 
 #		Drum MIDI:

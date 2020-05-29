@@ -5,7 +5,7 @@ import numpy as np
 from shelve import open as shopen
 import csv
 
-from midiranges import instrument_range, create_chord_list
+from midiranges import instrument_range, instrument_channels, create_chord_list
 from music_utils import midinote, save_midi
 
 
@@ -223,6 +223,9 @@ class settings:
             # Enforce the scale:
             self.modulate_to_scale(track)
 
+            # Set the Channels
+            self.modulate_channel(track)
+
             # Remove successive duplicates:
             self.remove_doubles(track)
 
@@ -285,9 +288,18 @@ class settings:
         Note that these pitches are still floats.
        """
         # Check musical range for this track:
-        music_range = self.tracks[track]['music_range']
-        if isinstance(music_range, str):
-            self.tracks[track]['music_range'] = instrument_range[music_range]
+        # Default is timidity+ piano
+        vst = self.tracks[track].get('vst', None)
+        instrument = self.tracks[track].get('instrument', None)
+        music_range = self.tracks[track].get('music_range', None)
+
+        # either need a vst instrument combo, or a music range.
+        if vst == instrument == music_range == None:
+            print("Need to provide either a vst or a range")
+            assert 0
+
+        if vst and instrument:
+            self.tracks[track]['music_range'] = instrument_range[vst][instrument]
 
         # Check whether a data range was provided.
         if not self.tracks[track].get('data_range', None):
@@ -380,7 +392,6 @@ class settings:
 
         Produces a list of pitches, but in the correct order.
         """
-        #midinotes, scales = scales, notes_per_beat = notes_per_beat, beats_per_chord=beats_per_chord)
         pitches = {}
         for time, floatpitch in self.tracks[track]['pitches_float'].items():
             scale = self.tracks[track]['scales'][time]
@@ -389,6 +400,30 @@ class settings:
             if self.debug:
                 print(time, floatpitch, scale, '->', pitch )
         self.tracks[track]['pitches'] = pitches
+
+    def modulate_channel(self, track):
+        """
+        Changing the channel for this track.
+
+        Produces a list of channels, but in the correct order.
+        If a VST and instrument is provided, then
+        """
+        # Different instruments have different channels
+        vst = self.tracks[track].get('vst', None)
+        instrument = self.tracks[track].get('instrument', None)
+        main_channel =  self.tracks[track].get('channel', None)
+
+        if vst == 'VSCO':
+            # One channel per instrument.
+            main_channel = instrument_channels[instrument]
+
+        channels = {}
+        # In this case, there is only one channel.
+        if isinstance(main_channel, int):
+            for time, floatpitch in self.tracks[track]['pitches_float'].items():
+                channels[time] = main_channel
+
+        self.tracks[track]['channels'] = channels
 
     def remove_doubles(self, track):
         """
@@ -452,7 +487,7 @@ class settings:
             for time, pitch in self.tracks[track]['pitches'].items():
                 note = midinote(
                     track=track_number,
-                    channel=channel,
+                    channel=self.tracks[track]['channels'][time],
                     pitch=int(pitch),
                     time=self.tracks[track]['locations'][time],
                     duration=self.tracks[track]['durations'][time],
