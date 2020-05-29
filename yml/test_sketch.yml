@@ -1,0 +1,148 @@
+
+
+
+global:
+    name: 'test'
+    title: 'Testing Sketch versillian vstys'
+    output_path: 'output/Sketch_test'
+    bpm: 146.
+    # graphical options:
+    plot_every: 1
+    scroll: 0.
+
+
+# Note that VST's don't use python numbering.
+# Ie python: 1 is actually MIDI: 2
+# If you want channel to use channel 1, set the value to 0.
+
+tracks:
+    SketchViolinR1: #SSP119
+      longname: 'Sketch Violin'
+      channel: 0
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      play_new_chords: True
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh409_TotalIntegratedPrimaryProduction.csv]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh409_TotalIntegratedPrimaryProduction.csv]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      vst: sketch
+      instrument: 'Violin 2'
+      music_range:
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [40, 50]
+      moving_average: '10 years'
+      volume_range:  [100, 120]
+      colour: 'green'
+      label_positions:  []
+
+    SketchViolinR2: #SSP126
+      longname: 'Sketch Violin'
+      channel: 0
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      play_new_chords: True
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be606_TotalIntegratedPrimaryProduction.csv,]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be606_TotalIntegratedPrimaryProduction.csv,]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      vst: sketch
+      instrument: 'Violin 3'
+      music_range:
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [40, 50]
+      moving_average: '10 years'
+      volume_range:  [100, 120]
+      colour: 'purple'
+      label_positions:  []
+
+    SketchViola: #SSP434 # R3
+      longname: 'Sketch Viola'
+      channel: 0
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      play_new_chords: True
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      vst: sketch
+      instrument: 'Viola section'
+      music_range:
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [40, 50]
+      moving_average: '15 years'
+      volume_range:  [100, 120]
+      colour: 'gold'
+      label_positions:  []
+
+
+    SketchCelloSection: # R4 SSP 370
+      longname: 'Sketch Cello Section'
+      channel: 0
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales: ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      play_new_chords: True
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be335_TotalIntegratedPrimaryProduction.csv, ]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be335_TotalIntegratedPrimaryProduction.csv,]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      vst: sketch
+      instrument: 'Cello section'
+        # data range: set min/max data range to match music range
+      # blank means use entire data range
+      data_range: [40, 50]
+      moving_average: '20 years'
+      volume_range:  [100, 120]
+      colour: 'pink'
+      label_positions:  []
+
+
+
+    SketchDoubleBass: # R5 SSP 585
+      longname: 'Sketch Double Bass R4'
+      channel: 0
+      units: 'Pg/yr'
+      notes_per_beat: 4.
+      beats_per_chord: 2.
+      scales:  ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be396_TotalIntegratedPrimaryProduction.csv, ]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be396_TotalIntegratedPrimaryProduction.csv,]
+      # type options [ shelve, nc, csv]
+      data_type: 'csv'
+      data_key:  None
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      vst: sketch
+      instrument: 'Double Bass'
+      # music_range: Flute
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [40, 50]
+      moving_average: '30 years'
+      volume_range:  [100, 127]
+      colour: 'red'
+      label_positions:  []

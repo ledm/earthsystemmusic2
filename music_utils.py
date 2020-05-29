@@ -23,13 +23,15 @@ def save_midi(title, tempo, tracks, path):
 
         # Add track name and tempo.
         for track_number, track_name in enumerate(sorted(tracks.keys())):
+            print("Saving track:", track_number, track_name)
             MyMIDI.addTrackName(track_number, 0, track_name)
             MyMIDI.addTempo(track_number , 0, tempo)
 
             # Add the notes.
+            print( track_number, track_name, tracks[track_name][0].track)
             for note in tracks[track_name]:
                 MyMIDI.addNote(
-                    note.track,
+                    track_number, #note.track,
                     note.channel,
                     note.pitch,
                     note.time,
@@ -37,7 +39,7 @@ def save_midi(title, tempo, tracks, path):
                     note.volume)
 
         # And write it to disk.
-        print(('Saving midi file:', path))
+        print('Saving midi file:', path)
         binfile = open(path, 'wb')
         MyMIDI.writeFile(binfile)
         binfile.close()

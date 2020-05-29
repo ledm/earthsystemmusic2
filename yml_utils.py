@@ -1,5 +1,6 @@
 
 import os
+import sys
 import yaml
 import numpy as np
 from shelve import open as shopen
@@ -20,6 +21,12 @@ def get_image_folder(name):
         pass
     return image_fold
 
+def folder(name):
+    try:
+        os.makedirs(name)
+    except:
+        pass
+    return name
 
 def get_output_folder(name):
     image_fold = 'output/'+name+'/'
@@ -92,14 +99,14 @@ def load_yml(yml_fn):
 
 
 # Music utils:
-def value_to_pitch(value, data_range, music_range, debug=False):
+def value_to_pitch(value, data_range, music_range, debug=True):
     """
     Using the range, the values and the musical output range,
     we can guess the output pitch.
 
     Note that it returns pitch as a float, not a int.
     """
-    if debug: print(value, data_range, music_range)
+
     data_extent = data_range[1] - data_range[0]
     music_extent = music_range[1] - music_range[0]
 
@@ -109,6 +116,10 @@ def value_to_pitch(value, data_range, music_range, debug=False):
     if np.isnan(pitch):
         print("value_to_pitch:", value, pitch, data_range, music_range)
         assert 0
+    #print(pitch)
+    #assert 0
+    if debug:
+        print("value_to_pitch:", value, '->',pitch, data_range, music_range)
     return pitch
 
 
@@ -299,6 +310,8 @@ class settings:
             assert 0
 
         if vst and instrument:
+            print ('Loading: ',vst, instrument, instrument_range[vst][instrument])
+            #assert 0
             self.tracks[track]['music_range'] = instrument_range[vst][instrument]
 
         # Check whether a data range was provided.
@@ -414,7 +427,7 @@ class settings:
         main_channel =  self.tracks[track].get('channel', None)
 
         if vst == 'VSCO':
-            # One channel per instrument.
+            # Simple VST with one channel per instrument.
             main_channel = instrument_channels[instrument]
 
         channels = {}
@@ -425,7 +438,7 @@ class settings:
 
         self.tracks[track]['channels'] = channels
 
-    def remove_doubles(self, track):
+    def remove_doubles(self, track, debug= False):
         """
         Remove successive duplicates in the pitch, loc, volume, duration
         dicts.
@@ -458,7 +471,8 @@ class settings:
             if pitch == last_pitch:
                 new_duration = last_duration + duration
                 self.tracks[track]['durations'][t_m1] = new_duration
-                print("Found double:", [t_m1, last_pitch, last_duration], [time, pitch,duration], 'length:',new_duration)
+                if debug:
+                    print("Found double:", [t_m1, last_pitch, last_duration], [time, pitch,duration], 'length:',new_duration)
                 for dict_key in ['pitches', 'durations', 'locations', 'scales','volumes']:
                     del self.tracks[track][dict_key][time]
                 notes_removed+=1
@@ -486,7 +500,7 @@ class settings:
             channel = self.tracks[track]['channel']
             for time, pitch in self.tracks[track]['pitches'].items():
                 note = midinote(
-                    track=track_number,
+                    track=track_number, # Means nothing, is overwritten later.
                     channel=self.tracks[track]['channels'][time],
                     pitch=int(pitch),
                     time=self.tracks[track]['locations'][time],
@@ -498,7 +512,7 @@ class settings:
         title = self.globals['title']
 
         tempo = self.globals['bpm']
-        path = self.globals['output_path']+'/'+self.globals['name']+'.mid'
+        path = folder(self.globals['output_path'])+'/'+self.globals['name']+'.mid'
         save_midi(title, tempo, miditracks, path)
 
 
@@ -536,7 +550,12 @@ def test_tracks(yml):
 
 def ymltest():
     print('Running yml_utils tests')
-    test_yml_fn = 'yml/test.yml'
+    try:
+        test_yml_fn = sys.argv[1]
+    except:
+        #test_yml_fn = 'yml/test.yml'
+        pass
+
     yml = load_yml(test_yml_fn)
     print('Testing', test_yml_fn)
     test_global(yml)

@@ -84,6 +84,9 @@ Sketch_ranges = {
     'Double Bass': [24, 60],
     'Viola section': [48, 88],
     'Violin':[67, 112],
+    'Violin 1':[86, 112],
+    'Violin 2':[76, 100],
+    'Violin 3':[67, 90],
     'Violin section': [67, 101],
 }
 Sketch_channels = {
@@ -132,8 +135,8 @@ VSCO_ranges = {
 }
 
 
-instrument_range = {'VSCO': VSCO_ranges}
-instrument_channels = {'VSCO': {instrument: channel -1 for instrument: channel in VSCO_channels}}
+instrument_range = {'VSCO': VSCO_ranges, 'sketch':Sketch_ranges,}
+instrument_channels = {'VSCO': {instrument: channel -1 for instrument, channel in VSCO_channels.items()}}
 
 
 
