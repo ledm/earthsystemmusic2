@@ -1,4 +1,4 @@
-
+#!/bin/python3
 import os
 import sys
 import yaml
@@ -6,20 +6,13 @@ import numpy as np
 from shelve import open as shopen
 import csv
 
-from midiranges import instrument_range, instrument_channels, create_chord_list
+from midiranges import instrument_range, instrument_channels, create_chord_list, pitch_to_named_note
 from music_utils import midinote, save_midi
 
 
 chord_dict = create_chord_list()
 
-def get_image_folder(name):
-    fold = get_output_folder(name)
-    image_fold = fold+'images'
-    try:
-        os.makedirs(image_fold)
-    except:
-        pass
-    return image_fold
+
 
 def folder(name):
     try:
@@ -123,6 +116,19 @@ def value_to_pitch(value, data_range, music_range, debug=True):
     return pitch
 
 
+def pitch_to_value(pitch, data_range, music_range):
+	"""
+	Using the pitch, the data range and the musical output range,
+	we can guess the uuantized data value.
+	"""
+	data_extent = data_range[1] - data_range[0]
+	music_extent = music_range[1] - music_range[0]
+
+	fraction = float(pitch - music_range[0]) / music_extent
+
+	value = (fraction * data_extent) + data_range[0]
+	return value
+
 def time_to_placement(time, time_range, notes_per_beat):
     """
     Using the time range, the time value and the notes per beat, we calculate
@@ -136,10 +142,10 @@ def time_to_placement(time, time_range, notes_per_beat):
     return (time - time_range[0])/notes_per_beat, duration
 
 
-def calculate_moving_average(data, track_dict, debug = False):
+def calculate_moving_average(data, moving_average, debug = False):
     ######
     #
-    moving_average = track_dict['moving_average']
+    #moving_average = track_dict['moving_average']
     if moving_average in ['', [], None]:
         print('No moving_average needed.')
         return data
@@ -201,52 +207,73 @@ def calculate_moving_average(data, track_dict, debug = False):
     return output
 
 
-class settings:
+class climate_music_maker:
     def __init__(self, yml_fn):
         """
-        Create a settings dictionairy for the yml file.
+        Create a climate_music_maker dictionairy for the yml file.
         """
         self.fn = yml_fn
         #self. yml is the yml dict.
         self.yml = load_yml(yml_fn)
         self.globals = self.yml['global']
-        self.debug = self.globals.get('debug', True)
 
+        # Set some global values:
+        self.title = self.globals['title']
+        self.tempo = self.globals['bpm']
+        self.output_folder = folder(self.globals['output_path'])
+        self.output_midi = ''.join([self.output_folder, '/',
+                                    self.globals['name'], '.mid'])
+        self.debug = self.globals.get('debug', True)
         self.tracks = self.yml['tracks']
+
         for track, track_dict in self.tracks.items():
 
             # Load track data
             paths = track_dict['data_paths']
-            self.tracks[track]['data'] = self.load_track(track, paths)
+            self.tracks[track]['raw_data'] = self._load_track_(track, paths)
+
+            # Apply moving average
+            data = self._apply_moving_average_(
+                self.tracks[track]['raw_data'],
+                self.tracks[track].get('moving_average', None))
+
+            # Enforce Masking
+            self.tracks[track]['data'] = self._enforce_mask_(data, track)
 
             # Create pitches dict.
-            self.create_pitches(track)
+            self._create_pitches_(track)
 
             # Create time dict:
-            self.create_locations(track)
+            self._create_locations_(track)
 
             # Create volume dict:
-            self.create_volumes(track)
+            self._create_volumes_(track)
 
             # Create scale in time:
-            self.determine_scales(track)
+            self._determine_scales_(track)
 
             # Enforce the scale:
-            self.modulate_to_scale(track)
+            self._modulate_to_scale_(track)
+
+            # Recalculate the data:
+            self._recalculate_data_(track)
 
             # Set the Channels
-            self.modulate_channel(track)
+            self._modulate_channel_(track)
 
             # Remove successive duplicates:
-            self.remove_doubles(track)
+            self._remove_doubles_(track)
 
             # Extend the final note:
-            self.long_last_note(track)
+            self._long_last_note_(track)
 
         # Convert to Midi notes:
-        self.convert_to_midi()
+        self._convert_to_midi_()
 
-    def load_track(self, track, paths):
+        # Print Midi notes:
+        self._print_notes_()
+
+    def _load_track_(self, track, paths):
         """
         Load a track from the track dict.
         """
@@ -270,17 +297,27 @@ class settings:
             track_data = apply_kwargs(track_dict, track_data, )
             data.update(track_data)
 
-        # Apply any kind of smoothing to the data:
-        data = calculate_moving_average(data, track_dict)
+        return data
 
+    def _apply_moving_average_(self, data, moving_average):
+
+        # Apply any kind of smoothing to the data:
+        data = calculate_moving_average(data, moving_average)
+        return data
+
+    def _enforce_mask_(self, data, track):
+        """
+        This function sets the data and time ranges, and also
+        applies a uniform mask to the time and data.
+        """
         # Set data and time ranges.
         times = np.ma.array([t for t in sorted(data.keys())])
         data = np.ma.array([data[t] for t in times])
 
-        time_range =  track_dict.get('time_range', None)
+        time_range =  self.tracks[track].get('time_range', None)
         if not time_range:
             time_range = [times.min(), times.max()]
-            track_dict['time_range'] = time_range
+            self.tracks[track]['time_range'] = time_range
 
         # Remove masked values.
         times = np.ma.masked_where(data.mask + (times < time_range[0] ) + (times > time_range[1]), times )
@@ -289,10 +326,9 @@ class settings:
         times = times.compressed()
         data = data.compressed()
         data = {t:d for t,d in zip(times,data)}
-
         return data
 
-    def create_pitches(self, track): #times, data, time_range, data_range, music_range, notes_per_beat = 4):
+    def _create_pitches_(self, track): #times, data, time_range, data_range, music_range, notes_per_beat = 4):
         """
         Create a set of musical notes.
 
@@ -328,7 +364,7 @@ class settings:
             pitches[time] = pitch
         self.tracks[track]['pitches_float'] = pitches
 
-    def create_locations(self, track):
+    def _create_locations_(self, track):
         """
         Create the dictionairy to link the dataset time and the location in time in the musical piece.
 
@@ -343,17 +379,26 @@ class settings:
         notes_per_beat = self.tracks[track]['notes_per_beat']
 
         duration = 1. / notes_per_beat
+        notes_per_bar = 4. #(typically)
 
         locations = {}
         durations = {}
+        music_locations = {} # bar, decimal time
+
         for time, dat in self.tracks[track]['data'].items():
             durations[time] = duration
-            locations[time] = (time - time_range[0])/notes_per_beat
+            location = (time - time_range[0])/notes_per_beat
+            locations[time] = location
+            bar = int(location/notes_per_bar)
+            music_locations[time] = [bar, location - (bar*notes_per_bar)]
+
 
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
+        self.tracks[track]['music_locations'] = music_locations
 
-    def create_volumes(self, track):
+
+    def _create_volumes_(self, track):
         """
         Create a dict for volumes from data.
         """
@@ -368,7 +413,12 @@ class settings:
             }
             return
 
-        volumes_data = self.load_track(track, vel_paths )
+        volumes_data = self._load_track_(track, vel_paths )
+        volumes_data = self._apply_moving_average_(
+                        volumes_data,
+                        self.tracks[track]['moving_average'])
+
+        volumes_data = self._enforce_mask_(volumes_data, track)
         volumes_data_range = list(volumes_data.values())
         volumes_data_range = [min(volumes_data_range), max(volumes_data_range)]
         volumes = {}
@@ -381,7 +431,7 @@ class settings:
             volumes[time] = volume
         self.tracks[track]['volumes'] = volumes
 
-    def determine_scales(self, track):
+    def _determine_scales_(self, track):
         """
         Using the times, determinues which scale is linked with each note.
 
@@ -399,22 +449,45 @@ class settings:
             scales[time] = scale_list[scale_num]
         self.tracks[track]['scales'] = scales
 
-    def modulate_to_scale(self, track):
+    def _modulate_to_scale_(self, track):
         """
         Using the chord and pitch (float) already calculated.
 
         Produces a list of pitches, but in the correct order.
         """
         pitches = {}
+        named_notes = {}
         for time, floatpitch in self.tracks[track]['pitches_float'].items():
             scale = self.tracks[track]['scales'][time]
-            pitch = min(chord_dict[scale], key=lambda x:abs(x - floatpitch))
-            pitches[time] = pitch
+            available_notes = np.ma.masked_outside(
+                chord_dict[scale],
+                self.tracks[track]['music_range'][0],
+                self.tracks[track]['music_range'][1]
+                ).compressed()
+            pitch = min(list(available_notes), key=lambda x:abs(x - floatpitch))
+            print(time,floatpitch, pitch, available_notes)
+            # pitch = min(chord_dict[scale], key=lambda x:abs(x - floatpitch))
+            pitches[time] = int(pitch)
+            named_notes[time] = pitch_to_named_note(pitch)
             if self.debug:
                 print(time, floatpitch, scale, '->', pitch )
         self.tracks[track]['pitches'] = pitches
+        self.tracks[track]['named_notes'] = named_notes
 
-    def modulate_channel(self, track):
+
+    def _recalculate_data_(self, track):
+        """
+        Calculate the musical value in terms of it's data value.
+        """
+        recalculated_data = {}
+        for time, pitch in self.tracks[track]['pitches'].items():
+            dat = pitch_to_value(pitch,
+                                       self.tracks[track]['data_range'],
+                                       self.tracks[track]['music_range'])
+            recalculated_data[time] = dat
+        self.tracks[track]['recalc_data'] = recalculated_data
+
+    def _modulate_channel_(self, track):
         """
         Changing the channel for this track.
 
@@ -438,7 +511,7 @@ class settings:
 
         self.tracks[track]['channels'] = channels
 
-    def remove_doubles(self, track, debug= False):
+    def _remove_doubles_(self, track, debug= False):
         """
         Remove successive duplicates in the pitch, loc, volume, duration
         dicts.
@@ -449,7 +522,7 @@ class settings:
         notes_removed = 0
         t_m1 = -1
         for i, time in enumerate(times):
-            print("remove_doubles", i, time)
+            print("_remove_doubles_", i, time)
             if i == 0:
                 t_m1 = time
                 continue
@@ -459,9 +532,9 @@ class settings:
             last_pitch = self.tracks[track]['pitches'][t_m1]
             last_duration =  self.tracks[track]['durations'][t_m1]
 
-            # Option to play a notev whenever the chord changes, even if
+            # Option to play a note whenever the chord changes, even if
             # there's no change in note pitch.
-            if self.tracks.get('play_new_chords', False):
+            if self.tracks[track].get('play_new_chords', False):
                 last_scale = self.tracks[track]['scales'][t_m1]
                 new_scale = self.tracks[track]['scales'][time]
                 if last_scale != new_scale:
@@ -473,7 +546,7 @@ class settings:
                 self.tracks[track]['durations'][t_m1] = new_duration
                 if debug:
                     print("Found double:", [t_m1, last_pitch, last_duration], [time, pitch,duration], 'length:',new_duration)
-                for dict_key in ['pitches', 'durations', 'locations', 'scales','volumes']:
+                for dict_key in ['pitches', 'durations', 'locations', 'volumes', ]:
                     del self.tracks[track][dict_key][time]
                 notes_removed+=1
             else:
@@ -481,14 +554,16 @@ class settings:
         if self.debug:
             print("Removed:", notes_removed, 'notes out of', len(times))
 
-    def long_last_note(self, track):
+    def _long_last_note_(self, track):
         """
         Extend the final note of the track.
         """
         max_time =  sorted(self.tracks[track]['locations'].keys())[-1]
-        self.tracks[track]['durations'][max_time] = 8.
+        note_length = self.globals.get('final_note_duration', 4.)
+        note_length = self.tracks[track].get('final_note_duration', note_length)
+        self.tracks[track]['durations'][max_time] += note_length
 
-    def convert_to_midi(self,):
+    def _convert_to_midi_(self,):
         """
         Convert to the 6 parameter midi data.
 
@@ -497,23 +572,50 @@ class settings:
         miditracks = {}
         for track_number, track in enumerate(self.tracks):
             miditracks[track] = []
-            channel = self.tracks[track]['channel']
             for time, pitch in self.tracks[track]['pitches'].items():
                 note = midinote(
                     track=track_number, # Means nothing, is overwritten later.
                     channel=self.tracks[track]['channels'][time],
-                    pitch=int(pitch),
+                    pitch=pitch,
                     time=self.tracks[track]['locations'][time],
                     duration=self.tracks[track]['durations'][time],
                     volume=int(self.tracks[track]['volumes'][time]),
                     )
                 miditracks[track].append(note)
 
-        title = self.globals['title']
+        self.miditracks = miditracks
+        save_midi(self.title, self.tempo, miditracks, self.output_midi)
 
-        tempo = self.globals['bpm']
-        path = folder(self.globals['output_path'])+'/'+self.globals['name']+'.mid'
-        save_midi(title, tempo, miditracks, path)
+
+    def _print_notes_(self):
+        """
+        Print midi notes.
+        """
+        times = {}
+        for track_number, track in enumerate(self.tracks):
+            print('-----------------------')
+            print('track:', track)
+            for time in sorted(self.tracks[track]['pitches'].keys()):
+                times[time] = True
+                print('t:',time,
+                      '\td:\t', round(self.tracks[track]['data'][time], 2),
+                      '\tpitch:', self.tracks[track]['pitches'][time],
+                      '\tnote:', self.tracks[track]['named_notes'][time],
+                      '\tscale:', self.tracks[track]['scales'][time],
+                      '\tloc:', self.tracks[track]['locations'][time],
+                      '\tbar:', self.tracks[track]['music_locations'][time],
+                      '\tdur:', self.tracks[track]['durations'][time],)
+        print('-----------------------')
+        print('Times:')
+        for time in sorted(times.keys()):
+            line = ' '.join(['t:', str(time), '\tscale:',
+                             self.tracks[track]['scales'][time], ':',
+                             str(self.tracks[track]['music_locations'][time]), ':'
+                             ],)
+            for track_number, track in enumerate(sorted(self.tracks)):
+                line = ' '.join([line, self.tracks[track]['named_notes'][time],])
+            print(line)
+
 
 
 #####
@@ -560,14 +662,11 @@ def ymltest():
     print('Testing', test_yml_fn)
     test_global(yml)
     test_tracks(yml)
-    #for track, track_dict in yml['tracks'].items():
-    #    data = load_track(track, track_dict)
-    #print('Test yml: Success')
 
-    print('Test settings class:')
-    setting = settings(test_yml_fn)
+    print('Test climate_music_maker class:')
+    setting = climate_music_maker(test_yml_fn)
     print(setting)
-    print('Test setting: Success')
+    print('Test climate_music_maker: Success')
 
 
 if __name__ == "__main__":

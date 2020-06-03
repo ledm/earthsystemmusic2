@@ -197,6 +197,10 @@ def create_chord_list():
           'min6': [0, 3, 7, 9, 11],
           'maj7': [0, 4, 7, 11],
           'min7': [0, 3, 7, 10],
+          'maj9': [0, 2, 4, 7, 11],
+          'min9': [0, 2, 3, 7, 10],
+          'maj11': [0, 2, 4, 5, 7, 11],
+          'min11': [0, 2, 3, 5, 7, 10],
           'min7(b5)' : [0, 3, 6, 10],
           '7': [0, 4, 7, 10],
           '7(#9)':  [0, 4, 7, 10, 15, 19, 23],
@@ -255,3 +259,22 @@ def create_chord_list():
 
     return all_notes
 chord_dict = create_chord_list()
+
+
+def pitch_to_named_note(pitch):
+    """
+    Convert pitch to a named note (ie is 60 is C5)
+    """
+    reference_keys = {
+        'C': 0, 'C#': 1,
+        'D': 2, 'Eb': 3,
+        'E': 4,
+        'F': 5, 'F#': 6,
+        'G': 7, 'Ab': 8,
+        'A': 9, 'Bb': 10,
+        'B': 11,
+    }
+    pitch_keys = {v:n for n, v in reference_keys.items()}
+    note = pitch_keys[pitch%12]
+    octave = str(int(pitch/12))
+    return note+octave
