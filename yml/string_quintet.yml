@@ -2,14 +2,16 @@
 
 
 global:
-    name: 'Primary production string quintet'
-    title: 'Primary production string quintet'
+    name: 'Primary Production String Quintet'
+    title: 'Primary Production String Quintet'
     output_path: 'output/StringQuintet'
-    bpm: 84.
+    bpm: 64.
+    notes_per_beat: &notes_per_beat_anchor 4
     # graphical options:
     plot_every: 1
+
     scroll: 0.
-    final_note_duration: 4
+    final_note_duration: 6
 
 
 # Note that VST's don't use python numbering.
@@ -19,43 +21,52 @@ global:
 # should probably swap around the runs so that violins have SPP585.
 
 tracks:
-    SketchViolinR1: #SSP119
-      longname: 'SSP1 1.9 - Violin'
+    SketchViolinR1:
+      longname: 'SSP5 8.5 - Violin'
+      # longname: 'SSP1 1.9 - Violin'
       channel: 0
       units: 'Pg/yr'
-      notes_per_beat: &notes_per_beat_anchor 4.
+      notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: &beats_per_chord_anchor 4.
       scales: &scales_anchor ['Cmaj', 'Gmaj', 'Amin', 'Fmaj', 'Cmaj', 'Dmin', 'Emin', 'Fmaj', 'Cmaj', 'Emin', 'Dmin', 'Fmaj', 'Dmin', 'Gmaj', 'Cmaj', 'Cmaj',]
       # 'Cmaj7', 'Gmaj7', 'Amin7', 'Fmaj7', 'Cmaj9', 'Gmaj9', 'Amin9', 'Fmaj9','Cmaj11', 'Gmaj11', 'Amin11', 'Fmaj11',]
       play_new_chords: True
-      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh409_TotalIntegratedPrimaryProduction.csv]
-      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh409_TotalIntegratedPrimaryProduction.csv]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv,
+                   ./output/csv/TotalIntegratedPrimaryProduction/u-be653_TotalIntegratedPrimaryProduction.csv]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc179_TotalIntegratedPrimaryProduction.csv,
+                     ./output/csv/TotalIntegratedPrimaryProduction/u-be653_TotalIntegratedPrimaryProduction.csv]
+      time_range: &time_range_anchor [1851.41369863, 2101.]
       # type options [ shelve, nc, csv]
       data_type: 'csv'
       data_key:  None
       data_kwargs: []
       # Music range, required. CAn be a part of ints or an instrument str
       vst: sketch
-      instrument: 'Violin'
+      instrument: 'Violin 1'
       music_range:
       # data range: set min/max data range to match music range
       # blank means
-      #data_range: [40, 50]
-      moving_average: '1 months'
-      volume_range:  [100, 120]
-      colour: 'green'
-      label_positions:  []
+      data_range: &data_range_anchor [40, 50]
+      moving_average: '2 years'
+      volume_range: &volume_range_anchor [50, 127]
+      # Plotting details
+      colour: 'red'
+      pane: 1
+      y_label: &ylabel_anchor 'Primary Production, Pg/yr'
 
-    SketchViolinR2: #SSP126
-      longname: 'SSP1 2.6 - Violin'
+    SketchViolinR2: #SSP3 7.0
+      longname: 'SSP3 7.0 - Violin'
       channel: 0
       units: 'Pg/yr'
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor
       scales: *scales_anchor #['C_major', 'G_major', 'A_minor', 'F_major' ]
       play_new_chords: True
-      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be606_TotalIntegratedPrimaryProduction.csv,]
-      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be606_TotalIntegratedPrimaryProduction.csv,]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv,
+                   ./output/csv/TotalIntegratedPrimaryProduction/u-be690_TotalIntegratedPrimaryProduction.csv,]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc292_TotalIntegratedPrimaryProduction.csv,
+                     ./output/csv/TotalIntegratedPrimaryProduction/u-be690_TotalIntegratedPrimaryProduction.csv,]
+      time_range: *time_range_anchor
       # type options [ shelve, nc, csv]
       data_type: 'csv'
       data_key:  None
@@ -66,11 +77,13 @@ tracks:
       music_range:
       # data range: set min/max data range to match music range
       # blank means
-      data_range: [40, 50]
+      data_range: *data_range_anchor
       moving_average: '6 years'
-      volume_range:  [100, 120]
-      colour: 'purple'
-      label_positions:  []
+      volume_range: *volume_range_anchor
+      # Plotting details
+      colour: 'gold'
+      pane: 1
+      y_label: *ylabel_anchor
 
     SketchViola: #SSP434 # R3
       longname: 'SSP4 3.4 - Viola'
@@ -80,8 +93,11 @@ tracks:
       beats_per_chord: *beats_per_chord_anchor
       scales: *scales_anchor #['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
       play_new_chords: True
-      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
-      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv,
+                   ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bc370_TotalIntegratedPrimaryProduction.csv,
+                     ./output/csv/TotalIntegratedPrimaryProduction/u-bh717_TotalIntegratedPrimaryProduction.csv,]
+      time_range: *time_range_anchor
       # type options [ shelve, nc, csv]
       data_type: 'csv'
       data_key:  None
@@ -92,22 +108,27 @@ tracks:
       music_range:
       # data range: set min/max data range to match music range
       # blank means
-      data_range: [40, 50]
+      data_range: *data_range_anchor
       moving_average: '6 years'
-      volume_range:  [100, 120]
-      colour: 'gold'
-      label_positions:  []
+      volume_range: *volume_range_anchor
+      # Plotting details
+      colour: 'purple'
+      pane: 1
+      y_label: *ylabel_anchor
 
-    SketchCelloSection: # R4 SSP 370
-      longname: 'SSP3 7.0 - Cello'
+    SketchCelloSection: # R4 SSP1 2.6
+      longname: 'SSP1 2.6 - Cello'
       channel: 0
       units: 'Pg/yr'
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor
       scales: *scales_anchor # ['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
       play_new_chords: True
-      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be335_TotalIntegratedPrimaryProduction.csv, ]
-      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be335_TotalIntegratedPrimaryProduction.csv,]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv,
+                   ./output/csv/TotalIntegratedPrimaryProduction/u-be393_TotalIntegratedPrimaryProduction.csv, ]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb075_TotalIntegratedPrimaryProduction.csv,
+                     ./output/csv/TotalIntegratedPrimaryProduction/u-be393_TotalIntegratedPrimaryProduction.csv,]
+      time_range: *time_range_anchor
       # type options [ shelve, nc, csv]
       data_type: 'csv'
       data_key:  None
@@ -117,22 +138,27 @@ tracks:
       instrument: 'Cello section'
         # data range: set min/max data range to match music range
       # blank means use entire data range
-      data_range: [40, 50]
+      data_range: *data_range_anchor
       moving_average: '6 years'
-      volume_range:  [100, 120]
-      colour: 'pink'
-      label_positions:  []
+      volume_range: *volume_range_anchor
+      # Plotting details
+      colour: 'blue'
+      pane: 1
+      y_label: *ylabel_anchor
 
-    SketchDoubleBass: # R5 SSP 585
-      longname: 'SSP5 8.5 Double Bass'
+    SketchDoubleBass: # R5 SSP1 1.9
+      longname: 'SSP1 1.9 - Double Bass'
       channel: 0
       units: 'Pg/yr'
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor
       scales:  *scales_anchor #['Cmaj', 'Gmaj', 'Amin', 'Fmaj' ]
       play_new_chords: True
-      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be396_TotalIntegratedPrimaryProduction.csv, ]
-      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv, ./output/csv/TotalIntegratedPrimaryProduction/u-be396_TotalIntegratedPrimaryProduction.csv,]
+      data_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv,
+                   ./output/csv/TotalIntegratedPrimaryProduction/u-bh807_TotalIntegratedPrimaryProduction.csv, ]
+      volume_paths: [./output/csv/TotalIntegratedPrimaryProduction/u-bb277_TotalIntegratedPrimaryProduction.csv,
+                     ./output/csv/TotalIntegratedPrimaryProduction/u-bh807_TotalIntegratedPrimaryProduction.csv,]
+      time_range: *time_range_anchor
       # type options [ shelve, nc, csv]
       data_type: 'csv'
       data_key:  None
@@ -143,8 +169,10 @@ tracks:
       # music_range: Flute
       # data range: set min/max data range to match music range
       # blank means
-      data_range: [40, 50]
+      data_range: *data_range_anchor
       moving_average: '6 years'
-      volume_range:  [100, 127]
-      colour: 'red'
-      label_positions:  []
+      volume_range: *volume_range_anchor
+      # Plotting details
+      colour: 'green'
+      pane: 1
+      y_label: *ylabel_anchor

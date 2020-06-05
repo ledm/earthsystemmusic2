@@ -84,7 +84,7 @@ Sketch_ranges = {
     'Double Bass': [24, 60],
     'Viola section': [48, 88],
     'Violin':[67, 112],
-    'Violin 1':[86, 112],
+    'Violin 1':[67, 102],
     'Violin 2':[76, 100],
     'Violin 3':[67, 90],
     'Violin section': [67, 101],
@@ -233,12 +233,16 @@ def create_chord_list():
     notes_in_chord = {}
     for key, reference in reference_keys.items():
         for chord, values in Chords.items():
+
+            #if chord == 'min':
+            #    print('making dict:', key,reference, chord, values)
             #octave_width = 12
             #if max(values)>12: octave_width = 24
             #if max(values)>24: octave_width = 36
             #values = [(v + reference)%octave_width for v in values]
-            notes_in_chord[''.join([key, chord])] = [v + reference for v in values]
-
+            notes_in_chord[''.join([key, chord])] = [(v + reference)%12 for v in values]
+            #if chord == 'min':
+            #    print('making dict:', key,reference, chord, values, notes_in_chord[''.join([key, chord])])
 	#Specific chords:
 	#notes_in_chord['C#ocmaj7'] = [0, 1, 4, 7, 11,]
 
@@ -249,8 +253,8 @@ def create_chord_list():
         notes = []
         octave_width = 12
 
-        if max(scale_notes) > 12:
-            octave_width = 24
+        #if max(scale_notes) > 12:
+        #    octave_width = 24
 
         for pitch in all_notes['Chromatic']:
             if pitch % octave_width in scale_notes:

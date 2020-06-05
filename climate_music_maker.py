@@ -7,19 +7,11 @@ from shelve import open as shopen
 import csv
 
 from midiranges import instrument_range, instrument_channels, create_chord_list, pitch_to_named_note
-from music_utils import midinote, save_midi
+from music_utils import midinote, save_midi, folder
 
 
 chord_dict = create_chord_list()
 
-
-
-def folder(name):
-    try:
-        os.makedirs(name)
-    except:
-        pass
-    return name
 
 def get_output_folder(name):
     image_fold = 'output/'+name+'/'
@@ -216,6 +208,7 @@ class climate_music_maker:
         #self. yml is the yml dict.
         self.yml = load_yml(yml_fn)
         self.globals = self.yml['global']
+        self.globals['all_times'] = {}
 
         # Set some global values:
         self.title = self.globals['title']
@@ -384,15 +377,16 @@ class climate_music_maker:
         locations = {}
         durations = {}
         music_locations = {} # bar, decimal time
-
+        all_times = {}
         for time, dat in self.tracks[track]['data'].items():
             durations[time] = duration
             location = (time - time_range[0])/notes_per_beat
             locations[time] = location
             bar = int(location/notes_per_bar)
             music_locations[time] = [bar, location - (bar*notes_per_bar)]
+            all_times[time] = True
 
-
+        self.globals['all_times'].update(all_times)
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
         self.tracks[track]['music_locations'] = music_locations
@@ -607,7 +601,7 @@ class climate_music_maker:
                       '\tdur:', self.tracks[track]['durations'][time],)
         print('-----------------------')
         print('Times:')
-        for time in sorted(times.keys()):
+        for time in sorted(self.globals['all_times'].keys()):
             line = ' '.join(['t:', str(time), '\tscale:',
                              self.tracks[track]['scales'][time], ':',
                              str(self.tracks[track]['music_locations'][time]), ':'

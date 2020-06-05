@@ -1,6 +1,14 @@
 
 from midiutil.MidiFile import MIDIFile
+import os
 
+
+def folder(name):
+    try:
+        os.makedirs(name)
+    except:
+        pass
+    return name
 
 class midinote:
     def __init__(self, track=0, channel=0, pitch=0, time=0, duration=0, volume=0):
