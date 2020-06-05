@@ -71,7 +71,7 @@ class climate_music_plotter:
         else:
             self.video_folder = folder(image_fold+'/video_frames/')
 
-            outpath = self.video_folder+ 'frame_'+str(plot_id).zfill(6)+'.png'
+            outpath = self.video_folder+ 'img'+str(plot_id).zfill(6)+'.png'
             self.video_paths.append(outpath)
         if os.path.exists(outpath):
             return

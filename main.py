@@ -28,11 +28,15 @@ def earthsystemmusic():
 
     frame_rate = str(bpm/60.*notes_per_beat/plot_every)
 
-    output_mp4 = settings.globals['output_path'] + settings.globals['name']+ '_no_sound.mp4'
+    output_mp4 = settings.globals['output_path']+ '/'+settings.globals['name']+ settings.globals['name']+ '_no_sound.mp4'
+    output_mp4 = output_mp4.replace(' ', '')
     #make_mp4 = "ffmpeg -nostdin -y -framerate "+frame_rate+" -s 1920x1280 -i "+plotter.video_folder+"/frame_%06d.png -i "+output_mp3+" -pix_fmt yuv420p -c:v libx264  -preset ultrafast  "+output_mp4
-    make_mp4 = "ffmpeg -nostdin -y -framerate "+frame_rate+" -s 1920x1280 -i "+plotter.video_folder+"/frame_%06d.png -pix_fmt yuv420p -c:v libx264  -preset ultrafast "+output_mp4
-    print(make_mp4)
+    #make_mp4 = "ffmpeg -framerate "+frame_rate+" -i "+plotter.video_folder+"/img%06d.png "+output_mp4
+    #print(make_mp4)
 
+    output_wma = output_mp4.replace('mp4', 'wma')
+    make_wma = 'ffmpeg -nostdin -y -framerate '+frame_rate+ '-s 1920x1280 -i'+plotter.video_folder+'img%06d.png -c:v wmv2 -b:v 12024k -c:a wmav2 -b:a 128k '+output_wma
+    print(make_wma)
     ######
     # Output paths:
     # output_mid = output_fold+name+'.mid'
