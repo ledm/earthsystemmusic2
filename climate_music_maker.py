@@ -6,6 +6,9 @@ import numpy as np
 from shelve import open as shopen
 import csv
 
+from dateutil.parser import parse as dt_parse
+from datetime import datetime
+
 from midiranges import instrument_range, instrument_channels, create_chord_list, pitch_to_named_note
 from music_utils import midinote, save_midi, folder
 
@@ -47,6 +50,32 @@ def load_csv(track_dict, path):
         #print(row)
         data[float(row[0])] = float(row[1])
     return data
+
+
+def load_wec_csv(track_dict, path):
+    """
+    Load the data from a WEC-style csv file.
+    """
+    data = {}
+    csv_file = open(path)
+    for i, row in enumerate(csv_file.readlines()):
+        if row[0] == '#': continue
+        if row == '\n': continue
+        #if row.lower().find('year') > -1: continue
+        row = row.split(',')
+        if len(row) <2: continue
+        if row[1] in ['\n', '']: continue 
+        if row[1] == '<0.01\n': row[1] = 0.01
+        dt = dt_parse(row[0])
+        doy = (dt - datetime(dt.year, 1,1)).days
+        dt_decimal = dt.year + doy/365.
+        #print(i, dt_decimal, row, row[1])
+
+        data[dt_decimal   ] = float(row[1])
+    return data
+
+
+
 
 
 def load_shelve(track_dict, path):
@@ -128,6 +157,7 @@ def time_to_placement(time, time_range, notes_per_beat):
 
     Note that it returns time as a float, not a int.
     """
+    assert 0 
     #time_range[0] is out_time= 0
     duration = 1. / notes_per_beat
     #print(time, (time - time_range[0])/notes_per_beat)
@@ -284,8 +314,11 @@ class climate_music_maker:
             elif track_dict['data_type'] in ['nc', 'netcdf']:
                 track_data = load_netcdf(track_dict, path)
                 assert 0
-            elif track_dict['data_type'] in ['csv']:
+            elif track_dict['data_type'] in ['csv', ]:
                 track_data = load_csv(track_dict, path)
+            elif track_dict['data_type'] in ['wec_csv', ]:
+                track_data = load_wec_csv(track_dict, path)
+
 
             track_data = apply_kwargs(track_dict, track_data, )
             data.update(track_data)
@@ -366,13 +399,15 @@ class climate_music_maker:
         It works like this:
         Time zero is allocated to be the first note of any in the piece.
         The duration is set tp the minimum
+
+        durations and locations are in music tempo units.
         """
         #time_range[0] is out_time= 0
         time_range = self.tracks[track]['time_range']
         notes_per_beat = self.tracks[track]['notes_per_beat']
-
+        beats_per_year = self.tracks[track].get('beats_per_year', 1)
         duration = 1. / notes_per_beat
-        notes_per_bar = 4. #(typically)
+        notes_per_bar = self.tracks[track].get('notes_per_bar', 4.) #(typically)
 
         locations = {}
         durations = {}
@@ -380,11 +415,13 @@ class climate_music_maker:
         all_times = {}
         for time, dat in self.tracks[track]['data'].items():
             durations[time] = duration
-            location = (time - time_range[0])/notes_per_beat
+            location = (time - time_range[0])*(beats_per_year)/notes_per_beat
+            print(time,(time - time_range[0]),'->', location)
             locations[time] = location
             bar = int(location/notes_per_bar)
             music_locations[time] = [bar, location - (bar*notes_per_bar)]
             all_times[time] = True
+            print(time,(time - time_range[0]),'->', location, music_locations[time])
 
         self.globals['all_times'].update(all_times)
         self.tracks[track]['locations'] = locations
@@ -410,7 +447,7 @@ class climate_music_maker:
         volumes_data = self._load_track_(track, vel_paths )
         volumes_data = self._apply_moving_average_(
                         volumes_data,
-                        self.tracks[track]['moving_average'])
+                        self.tracks[track].get('moving_average', None))
 
         volumes_data = self._enforce_mask_(volumes_data, track)
         volumes_data_range = list(volumes_data.values())
@@ -603,11 +640,11 @@ class climate_music_maker:
         print('Times:')
         for time in sorted(self.globals['all_times'].keys()):
             line = ' '.join(['t:', str(time), '\tscale:',
-                             self.tracks[track]['scales'][time], ':',
-                             str(self.tracks[track]['music_locations'][time]), ':'
+                             self.tracks[track]['scales'].get(time, 'False'), ':',
+                             str(self.tracks[track]['music_locations'].get(time, False)), ':'
                              ],)
             for track_number, track in enumerate(sorted(self.tracks)):
-                line = ' '.join([line, self.tracks[track]['named_notes'][time],])
+                line = ' '.join([line, self.tracks[track]['named_notes'].get(time,'False')])
             print(line)
 
 

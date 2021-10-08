@@ -1,4 +1,7 @@
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 import os
 
 from climate_music_maker import climate_music_maker
