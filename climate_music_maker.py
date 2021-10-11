@@ -410,15 +410,23 @@ class climate_music_maker:
         notes_per_beat = self.globals.get('notes_per_beat', 4)
         notes_per_beat = self.tracks[track].get('notes_per_beat', notes_per_beat)
 
-        duration = 1. / notes_per_beat
+        beats_per_year = self.tracks[track].get('beats_per_year', 1)
+        max_duration = 1. / notes_per_beat
         notes_per_bar = self.tracks[track].get('notes_per_bar', 4.) #(typically)
 
         locations = {}
         durations = {}
         music_locations = {} # bar, decimal time
         all_times = {}
-        for time, dat in self.tracks[track]['data'].items():
-            durations[time] = duration
+        number_dat = len(self.tracks[track]['data'].keys())
+        ordered_times = sorted(list(self.tracks[track]['data'].keys()))
+        for i, time in enumerate(ordered_times):
+            dat = self.tracks[track]['data'][time]
+            if i < number_dat -1:
+                dur = (ordered_times[i+1] - time)*(beats_per_year)/notes_per_beat
+            else: dur = max_duration
+            if dur > max_duration: dur = max_duration
+            durations[time] = dur
             location = (time - time_range[0])*(beats_per_year)/notes_per_beat
             print(time,(time - time_range[0]),'->', location)
             locations[time] = location

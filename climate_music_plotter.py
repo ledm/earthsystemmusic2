@@ -7,7 +7,8 @@ import shutil
 
 from climate_music_maker import climate_music_maker
 from music_utils import folder, symlink
-from matplotlib import pyplot
+from matplotlib import pyplot, rc
+#import matplotlib.font_manager
 import matplotlib.gridspec as gridspec
 import numpy as np
 
@@ -56,7 +57,6 @@ class climate_music_plotter:
         self.video_paths = []
         self._make_data_plots()
         self._make_pitch_plots()
-        self._make_video_plots_()
 
         #assert 0
 
@@ -108,6 +108,9 @@ class climate_music_plotter:
         image_size = self.globals.get('image_size', [1920., 1280.])
         fig.set_size_inches(image_size[0]/dpi,image_size[1]/dpi)
 
+        if self.globals.get('background_colour', False):
+            fig.patch.set_facecolor(self.globals.get('background_colour', 'white'))
+
         axes = {}
         panes  = {}
         numbered_axes = {}
@@ -137,6 +140,7 @@ class climate_music_plotter:
 
         # make plot.
         for track, track_dict in self.tracks.items():
+            pyplot.sca(axes[track])
             colour = track_dict['colour']
             name = track_dict['longname']
 
@@ -144,6 +148,10 @@ class climate_music_plotter:
             recalc_times = sorted(track_dict['recalc_data'].keys())
             recalc_data = [track_dict['recalc_data'][t] for t in recalc_times]
             new_times, new_data = quantize_time(recalc_times, recalc_data)
+
+            # raw dat:
+            raw_times = [t for t in sorted(track_dict['raw_data'].keys())]
+            raw_data = [track_dict['raw_data'][t] for t in raw_times]
 
             if self.globals.get('scroll', False):
                 tmin = np.min(new_times)
@@ -157,48 +165,98 @@ class climate_music_plotter:
                     tmin = t - scroll
                     tmax = t + 1.
                 pyplot.xlim(tmin-0.5, tmax+0.5)
+            elif self.globals.get('annual_plot', False):
+                print('annual_plot', time_line)
+                pyplot.xlim(int(time_line), int(time_line)+1.)
             else:
-                # No scrolling , plot entire axis at once.
+                # No scrolling no annual plot, plot entire axis at once.
                 pyplot.xlim(np.min(new_times)-0.5, np.max(new_times)+0.5)
 
             if time_line is None:
                 axes[track].plot(new_times, new_data, color=colour, lw=0.8, label = name)
                 continue
-            axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+            # axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+            #
+            # pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
+            #
+            # pyplot.axvline(x=time_line, c = 'black', lw = 0.7)
+            # axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
+            #
+            # if future_lines == 'thin':
+            #     post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
+            #     axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+            #
+            # if future_lines == 'raw_data':
+            #     future_times = np.array([t for t in sorted(track_dict['data'].keys())])
+            #     future_times = np.ma.masked_outside(future_times,
+            #                                         time_line,
+            #                                         track_dict['time_range'][1]).compressed()
+            #     future_data = np.array([self.tracks[track]['data'][t] for t in future_times])
+            #     future_times, future_data = quantize_time(future_times, future_data)
+            #     axes[track].plot(future_times, future_data, color=colour, lw=1.5, alpha=0.3)
 
             pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
 
+            if self.globals.get('show_raw_data', False):
+                post_new_data = np.ma.masked_where(raw_times <= time_line, raw_data)
+                post_new_times = raw_times.copy()
+
+            else:
+                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
+                post_new_times = new_times.copy()
+
             pyplot.axvline(x=time_line, c = 'black', lw = 0.7)
             axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
-
-            if future_lines == 'thin':
-                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
-                axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
-
-            if future_lines == 'raw_data':
-                future_times = np.array([t for t in sorted(track_dict['data'].keys())])
-                future_times = np.ma.masked_outside(future_times,
-                                                    time_line,
-                                                    track_dict['time_range'][1]).compressed()
-                future_data = np.array([self.tracks[track]['data'][t] for t in future_times])
-                future_times, future_data = quantize_time(future_times, future_data)
-                axes[track].plot(future_times, future_data, color=colour, lw=1.5, alpha=0.3)
+            axes[track].plot(post_new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
 
         # edit subplots.
         for pane, ax in numbered_axes.items():
+            pyplot.sca(ax)
             legend_loc =  self.globals.get('legend_loc', 'lower left')
             #legend = ax.legend(frameon=False, loc=legend_loc)
-            legend = ax.legend(loc=legend_loc)
+            legend = ax.legend(loc=legend_loc, framealpha=0.)
             legend.get_frame().set_linewidth(0.0)
+
+
+            # Hide the right and top spines
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+
+            # Only show ticks on the left and bottom spines
+            ax.yaxis.set_ticks_position('left')
+            ax.xaxis.set_ticks_position('bottom')
 
             ax.set_ylabel(ylabels[pane])
             if pane == panes_count:
-                ax.set_xlabel('Year')
+                if self.globals.get('annual_plot', False):
+                    xlabel = str(int(time_line))
+                    ax.set_xticklabels([])
+                else:
+                    xlabel = self.globals.get('xlabel', 'Year')
+                ax.set_xlabel(xlabel)
             else:
                 ax.set_xticklabels([])
                 ax.axes.get_xaxis().set_visible(False)
 
-        pyplot.suptitle(self.globals['title'])
+            if self.globals.get('background_colour', False):
+                ax.set_facecolor(self.globals.get('background_colour', 'white'))
+
+        # Add Chyron text:
+        if self.globals.get('chyron_text',False):
+            chryons = self.globals.get('chyron_text',False)
+            fig.subplots_adjust(bottom=0.2)
+            total_figs = len(self.globals['all_times'].keys())
+            chy_no = int((float(plot_id)/float(total_figs))*len(chryons))
+            pyplot.figtext(0.5,0.1,chryons[chy_no],
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        fontsize='small')
+
+
+
+        title = self.globals.get('title', '')
+        pyplot.suptitle(title)
+
         print("saving", outpath)
         pyplot.savefig(outpath, dpi=dpi)
         pyplot.close()
@@ -209,7 +267,7 @@ class climate_music_plotter:
         if not image_fold:
             image_fold = get_image_folder(name)
 
-        outpath = image_fold+'/tmp.png'
+        outpath = image_fold+'/add_data.png'
         #outpath = image_fold+'/image_0.png'
         #if os.path.exists(outpath):
         #    continue
