@@ -1,4 +1,7 @@
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 import os
 import shutil
 
