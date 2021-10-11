@@ -1,0 +1,203 @@
+
+global:
+    name: 'Western Channel Observatory'
+    title: 'Western Channel Observatory'
+    output_path: 'output/WCO'
+    bpm: 90.
+    #Notes per beat is actually "years per musical beat". 
+    # with weekly L4 data, want 2 data points per chord, or about
+    beats_per_year: &beats_per_year_anchor 24 
+    notes_per_beat: &notes_per_beat_anchor 2   
+      #beats_per_chord: &beats_per_chord_anchor 1
+    beats_per_chord: &beats_per_chord_anchor 1
+
+    # graphical options:
+    plot_every: 10
+    scroll: 0.
+    annual_plot: True  
+    final_note_duration: 4
+    background_colour: '#F0FFFF' # Azure (very white)
+      #'#43b3ae' # verdigris (very grey)
+      # '#c9ffe5' # Aero Blue )too bright)
+      # # '#D3D3D3' # light grey (boring grey)
+    xlabel: ' '
+    legend_loc: 'upper right'
+    show_raw_data: True
+    chyron_text: [
+          ' ',
+          'This is a sonification of marine data from the L4 station, part of the Western Channel Observatory (WCO).',
+          'The WCO is a NERC-funded partnership between Plymouth Marine Laboratory (PML) and the Marine Biological Association.',
+          'The L4 station is the site of several long term oceanographic and marine biodiversity datasets.',
+          'The L4 buoy site is off the coast of Cornwall & Devon, near the Eddystone Lighthouse.',
+          'In addition to the L4 buoy, data are taken weekly at L4 using the PML research vessels.',
+          ' ',
+          'The annual cycle of both phytoplankton and surface nutrients at L4 can be seen in this data:',
+          'The nutrients are replenished in the winter by storms mixing nutrient rich deep water with surface layers.',
+          'In the spring and summer, the phytoplankton bloom, consuming much of the nutrients.',
+          'In the late summer and autumn, the phytoplankton become limited by low nutrients and less sunlight, and the bloom fades.',
+          'The annual cycle repeats, but no two years are quite the same.', 
+          ' ',
+          'In the music, each of the L4 datasets is linked to a different musical instrument.',
+          'Nitrate: violin, Phosphate: cello, Silicate: viola, Phytoplankton: Piano.',
+          'The data value is linked to the pitch. High data creates louder and higher pitch notes.',  
+          'The figure shows both the original data and the data after sonification.', 
+          ' ',
+          'The musification process is fully described in de Mora et al. (2020): DOI:10.5194/gc-3-263-2020',
+          'Additional musical pieces are available at www.youtube.com/c/LeedeMora',
+         ]
+
+
+# Note that VST's don't use python numbering.
+# Ie python: 1 is actually MIDI: 2
+# If you want channel to use channel 1, set the value to 0.
+
+# should probably swap around the runs so that violins have SPP585.
+
+tracks:
+  wec_nitrate:
+      longname: 'Nitrate'
+      # longname: 'SSP1 1.9 - Violin'
+      channel: 0
+      units: 'uM'
+      beats_per_year: *beats_per_year_anchor  
+      notes_per_beat: *notes_per_beat_anchor
+      beats_per_chord: *beats_per_chord_anchor 
+        #     scales: &scales_anchor ['Gmaj', 'Gmaj', 'Gmaj', 'Gmaj', 'Gmin', 'Gmin', 'Gmin', 'Gmin', # 1 beat each
+        #                    'Amin7', 'Amin7', 'Dmaj', 'Dmaj',  'Dmaj', 'Dmaj',  'Dmaj', 'Dmaj', 
+        #                   'Bbmin', 'Bbmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin',
+        #                   'C7', 'C7', 'Cmin', 'Cmin', 'Fmaj', 'Fmaj', 'Fmaj', 'Fmaj',
+        #                   'Dmaj', 'Dmaj', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin',
+        #                   'Ebmaj', 'Ebmaj','Ebmaj', 'Ebmaj','Ebmaj', 'Ebmaj','Ebmaj', 'Ebmaj',
+        #                   'Gmaj', 'Gmaj', 'Gmaj', 'Gmaj','Gmaj', 'Gmaj', 'Bdim', 'Bdim', 
+        #                   'Fmaj', 'Fmaj','Fmaj','Fmaj', 'Cmin', 'Cmin', 'Cmin', 'Cmin', ]
+      # Better chords here: https://www.youtube.com/watch?v=hZYak7FU8JM
+      scales: &scales_anchor [ 'Gmin', 'Gmin','D7', 'D7',  # 2 beats each 
+                               'Gmin', 'Gmin', 'Cmin7', 'Adim7',
+                               'Gmin', 'Gmin', 'Gmin', 'Gmin',
+                               'Ebmaj', 'G7', 'Csus4', 'Cmin',
+                               'Gmin', 'Gmin', 'Gmin', 'Gmin',
+                               'Cmin7', 'D7',
+                               'Gmin', 'Gmin',]
+
+      # G, A, Bb, C - ascending baseline.                               
+      #   
+
+      # at 3:30
+                            # 16 bars at 90bpm
+      # 
+      play_new_chords: True
+      data_paths: [output/csv/L4/L4_surface_nitrate.csv,   ]
+      volume_paths: [output/csv/L4/L4_surface_nitrate.csv,   ]
+      time_range: [2000., 2022.]
+      # type options [ shelve, nc, csv]
+      data_type: 'wec_csv'
+      data_key:  'NITRATE, uM'
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      #vst: sketch
+      #      instrument: 'double bass'
+        #      music_range: [24, 60]
+      instrument: 'violin'
+      music_range: [67, 102]
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [0., 1.5]
+        #moving_average: None
+      volume_range: [50, 127]
+      # Plotting details
+      colour: '#2F4F4F' # 'red'
+      pane: 1
+      y_label: ' ' #Nitrate, uM'
+      
+
+
+  wec_phosphate:
+      longname: 'Phosphate'
+      channel: 0
+      units: 'uM'
+      beats_per_year: *beats_per_year_anchor
+      notes_per_beat: *notes_per_beat_anchor
+      beats_per_chord: *beats_per_chord_anchor
+      scales: *scales_anchor 
+      play_new_chords: True
+      data_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
+      volume_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
+      time_range:  [2000., 2022.]
+      # type options [ shelve, nc, csv]
+      data_type: 'wec_csv'
+      data_key:  'phosphate, uM'
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      #vst: sketch
+      instrument: 'Cello'
+      music_range: [36, 79]
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [0., 1.]
+      #moving_average: None
+      volume_range: [50, 100]
+      # Plotting details
+      colour: 'purple'
+      pane: 2
+      y_label: ' ' #'Phosphate, uM'
+
+  wec_silicate:
+      longname: 'Silicate'
+      channel: 0
+      units: 'uM'
+      beats_per_year: *beats_per_year_anchor
+      notes_per_beat: *notes_per_beat_anchor
+      beats_per_chord: *beats_per_chord_anchor
+      scales: *scales_anchor 
+      play_new_chords: True
+      data_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
+      volume_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
+      time_range: [2000., 2022.]
+      # type options [ shelve, nc, csv]
+      data_type: 'wec_csv'
+      data_key:  'silicate, uM'
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      #vst: sketch
+      instrument: 'viola'
+      music_range: [48, 88]
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [0., 11.]
+      #moving_average: None
+      volume_range: [50, 100]
+      # Plotting details
+      colour: '#8B0000' # dark red
+      pane: 3
+      y_label: ' ' #Silicate, uM'
+
+  wec_phyto:
+      longname: 'Phytoplankton biomass'
+      channel: 0
+      units: 'mgC m-3'
+      beats_per_year: *beats_per_year_anchor
+      notes_per_beat: *notes_per_beat_anchor
+      beats_per_chord: *beats_per_chord_anchor
+      scales: *scales_anchor
+      play_new_chords: True
+      data_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
+      volume_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
+      time_range: [2000., 2022.]
+      # type options [ shelve, nc, csv]
+      data_type: 'wec_csv'
+      data_key:  'phytoplankton biomass, mgC m-3'
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      #vst: sketch
+      instrument: 'piano'
+      music_range: [43, 91]  # g to g
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [0., 150.]
+      #moving_average: None
+      volume_range: [50, 115]
+      # Plotting details
+      colour: '#006400' # green 
+      pane: 4
+      y_label: ' ' #Phytoplankton biomass, mgC m-3'
+
