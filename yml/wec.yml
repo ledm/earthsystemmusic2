@@ -180,6 +180,8 @@ tracks:
       beats_per_chord: *beats_per_chord_anchor
       scales: *scales_anchor
       play_new_chords: True
+      # downloaded from: https://www.bodc.ac.uk/data/published_data_library/catalogue/10.5285/c9386b5c-b459-782f-e053-6c86abc0d129/
+      doi: "doi:10.5285/c9386b5c-b459-782f-e053-6c86abc0d129"
       data_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
       volume_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
       time_range: [2000., 2022.]
