@@ -263,6 +263,9 @@ class climate_music_maker:
         # Convert to Midi notes:
         self._convert_to_midi_()
 
+        # Make a complete time array
+        self.globals['all_times'] = np.array(sorted(self.globals['all_times'].keys()))
+
         # Print Midi notes:
         self._print_notes_()
 
@@ -369,7 +372,8 @@ class climate_music_maker:
         """
         #time_range[0] is out_time= 0
         time_range = self.tracks[track]['time_range']
-        notes_per_beat = self.tracks[track]['notes_per_beat']
+        notes_per_beat = self.globals.get('notes_per_beat', 4)
+        notes_per_beat = self.tracks[track].get('notes_per_beat', notes_per_beat)
 
         duration = 1. / notes_per_beat
         notes_per_bar = 4. #(typically)
@@ -601,7 +605,7 @@ class climate_music_maker:
                       '\tdur:', self.tracks[track]['durations'][time],)
         print('-----------------------')
         print('Times:')
-        for time in sorted(self.globals['all_times'].keys()):
+        for time in self.globals['all_times']:
             line = ' '.join(['t:', str(time), '\tscale:',
                              self.tracks[track]['scales'][time], ':',
                              str(self.tracks[track]['music_locations'][time]), ':'

@@ -24,9 +24,9 @@ def earthsystemmusic():
 	#climate_music_video(settings, plotter)
     bpm = settings.globals['bpm']
     notes_per_beat = settings.globals['notes_per_beat']
-    plot_every = settings.globals.get('plot_every', 1)
+    plot_every = settings.globals.get('frame_rteplot_every', 1)
 
-    frame_rate = str(bpm/60.*notes_per_beat/plot_every)
+    frame_rate =  str(settings.globals.get('frame_rate', str(bpm/60.*notes_per_beat/plot_every)))
 
     output_mp4 = settings.globals['output_path']+ '/'+settings.globals['name']+ settings.globals['name']+ '_no_sound.mp4'
     output_mp4 = output_mp4.replace(' ', '')
@@ -34,8 +34,8 @@ def earthsystemmusic():
     #make_mp4 = "ffmpeg -framerate "+frame_rate+" -i "+plotter.video_folder+"/img%06d.png "+output_mp4
     #print(make_mp4)
 
-    output_wma = output_mp4.replace('mp4', 'wma')
-    make_wma = 'ffmpeg -nostdin -y -framerate '+frame_rate+ '-s 1920x1280 -i'+plotter.video_folder+'img%06d.png -c:v wmv2 -b:v 12024k -c:a wmav2 -b:a 128k '+output_wma
+    output_wmv = output_mp4.replace('mp4', 'wmv')
+    make_wma = './ffmpeg.exe -nostdin -y -framerate '+str(frame_rate)+ ' -s 1920x1280 -i '+plotter.video_folder+'img%06d.png -c:v wmv2 -b:v 12024k -c:a wmav2 -b:a 128k '+output_wmv
     print(make_wma)
     ######
     # Output paths:

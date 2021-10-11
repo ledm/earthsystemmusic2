@@ -82,7 +82,9 @@ SINE_channels = {
 Sketch_ranges = {
     'Cello section': [36, 79],
     'Double Bass': [24, 60],
+    'Double Bass 2': [36, 58],
     'Viola section': [48, 88],
+
     'Violin':[67, 112],
     'Violin 1':[67, 102],
     'Violin 2':[76, 100],

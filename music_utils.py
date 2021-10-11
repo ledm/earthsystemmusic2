@@ -1,6 +1,7 @@
 
 from midiutil.MidiFile import MIDIFile
 import os
+import platform
 
 
 def folder(name):
@@ -9,6 +10,23 @@ def folder(name):
     except:
         pass
     return name
+
+
+def symlink(source, link_name):
+    if platform.system().lower().find('cygwin') > -1:
+        import ctypes
+        csl = ctypes.windll.kernel32.CreateSymbolicLinkW
+        csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
+        csl.restype = ctypes.c_ubyte
+        flags = 1 if os.path.isdir(source) else 0
+        if csl(link_name, source, flags) == 0:
+            raise ctypes.WinError()
+    else:
+        os_symlink = getattr(os, "symlink", None)
+        if callable(os_symlink):
+            os_symlink(source, link_name)
+
+
 
 class midinote:
     def __init__(self, track=0, channel=0, pitch=0, time=0, duration=0, volume=0):

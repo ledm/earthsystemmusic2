@@ -2,14 +2,55 @@
 
 
 global:
-    name: 'Primary Production String Quintet'
-    title: 'Primary Production String Quintet'
-    output_path: 'output/StringQuintet'
-    bpm: 64.
+    name: 'World Oceans Day Quintet'
+    title: 'World Oceans Day Quintet'
+    description: |
+      World Oceans Day Quintet - a procedurally generated piece of music from the UK's Earth System Model.
+
+      In this work, we use time series data from the UK Earth System model (#UKESM) to create a procedurally generated musical piece.
+
+      The UKESM (https://ukesm.ac.uk/) is a computational simulation of the Earth System produced by several
+      research teams around the UK. UKESM is the UK’s contribution to the next international coupled model intercomparison project (#CMIP6).
+      The CMIP is the modelling data behind the Intergovernmental Panel on Climate Change (IPCC) assessment reports,
+      which form the scientific backbone of international climate policy.
+
+      This string quintet is a Larghetto piece in C Major, and includes
+      marine primary production data from five UKESM simulations.
+      Each dataset includes a historical dataset and a future scenario.
+      The marine primary production is a measure of how phytoplankton are growing.
+      Phytoplankton are freely floating small minute organisms that drift with water currents.
+      Similar to land vegetation, phytoplankton use sunlight to photosynthesis, absorb carbon dioxide and releases oxygen.
+      Phytoplankton are the base of the marine food chain and are responsible for generating
+      half the oxygen in the atmosphere.
+
+      The time series data is converted into musical notes such that the lowest value in the dataset
+      is played by the lowest note available, and the highest value of the dataset is the highest note available.
+      The notes in between are assigned proportionally by their data value between the highest and lowest notes.
+      These notes are then turned into the closest note in the requested scale or  chord.
+      If the same note is played successively, then the first note's duration is extended and the repeated notes are removed.
+
+      The loudness of the music is determined using the same method as the pitch,
+      so that when there is less primary production, the music gets quieter.
+
+      The video shows the five datasets ranging from business as usual in  SSP5 8.5 (red),
+      down to the most sustainble possible future in SSP1 1.9 (green). All five scenarios
+      see a decrease in the marine primary prodcution over the 21st century.
+
+      The strings are perfomed by the Versillian Studios Chamber Orchestra plugin in the Reaper DAW.
+
+      About me: I'm Dr. Lee de Mora, a marine ecosystem modeller and musician based in Plymouth Marine Laboratory,
+      Plymouth, in the UK. I've helped develop and evaluate the UKESM model and the ESMValTool model evaluation suite.
+      I also play bass and guitar in the Plymouth based band, Glass Curtain: http://glasscurtainband.weebly.com
+
+      If you enjoy this, please like and subscribe.
+
+      #Music #Science #ClimateChange  #MarineScience #Ocean #OriginalMusic #IPCC #CMIP6 #EarthSystemModels #RCP #SSP1 #MarineBiology #Piano #midi #timidity #linux #reaper #sheetmusic #PML #NERC #UKESM
+    output_path: 'output/WorldOceansDayQuintet'
+    bpm: 62.
     notes_per_beat: &notes_per_beat_anchor 4
     # graphical options:
     plot_every: 1
-
+    frame_rate: 30
     scroll: 0.
     final_note_duration: 6
 
@@ -46,13 +87,13 @@ tracks:
       music_range:
       # data range: set min/max data range to match music range
       # blank means
-      data_range: &data_range_anchor [40, 50]
+      data_range: &data_range_anchor [39, 51]
       moving_average: '2 years'
       volume_range: &volume_range_anchor [50, 127]
       # Plotting details
       colour: 'red'
       pane: 1
-      y_label: &ylabel_anchor 'Primary Production, Pg/yr'
+      y_label: &ylabel_anchor 'UKESM Primary Production, Pg/yr'
 
     SketchViolinR2: #SSP3 7.0
       longname: 'SSP3 7.0 - Violin'
@@ -138,7 +179,7 @@ tracks:
       instrument: 'Cello section'
         # data range: set min/max data range to match music range
       # blank means use entire data range
-      data_range: *data_range_anchor
+      #data_range: *data_range_anchor
       moving_average: '6 years'
       volume_range: *volume_range_anchor
       # Plotting details
@@ -165,11 +206,11 @@ tracks:
       data_kwargs: []
       # Music range, required. CAn be a part of ints or an instrument str
       vst: sketch
-      instrument: 'Double Bass'
+      instrument: 'Double Bass 2'
       # music_range: Flute
       # data range: set min/max data range to match music range
       # blank means
-      data_range: *data_range_anchor
+      #data_range: *data_range_anchor
       moving_average: '6 years'
       volume_range: *volume_range_anchor
       # Plotting details

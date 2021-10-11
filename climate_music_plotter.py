@@ -1,8 +1,9 @@
 
 import os
+import shutil
 
 from climate_music_maker import climate_music_maker
-from music_utils import folder
+from music_utils import folder, symlink
 from matplotlib import pyplot
 import matplotlib.gridspec as gridspec
 import numpy as np
@@ -54,14 +55,35 @@ class climate_music_plotter:
         self._make_pitch_plots()
         self._make_video_plots_()
 
-        for t, time in enumerate(sorted(self.globals['all_times'].keys())):
-            #continue
-            if t % self.globals.get('plot_every', 1) !=0:
-                continue
-            self._make_video_plots_(plot_id=t, time_line=time)
+        #assert 0
+
+        if self.globals.get('frame_rate', False):
+            data_rate = self.globals['bpm']/60.*self.globals['notes_per_beat'] # Notes per second ie 5
+            # data rate is number of years per second
+            # frame rate is number of frames per second.
+            frame_rate = self.globals.get('frame_rate', 0.) # ie 30
+            data_per_frame = data_rate/ frame_rate  # ie 1.66 years of data per frame
+
+            time_steps = np.arange(
+                self.globals['all_times'].min(),
+                self.globals['all_times'].max() + 1. + data_per_frame,
+                data_per_frame)
+            for t, time in enumerate(time_steps):
+                    print('plotting: frame', t,'time:', time)
+                    self._make_video_plots_(plot_id=t, time_line=time)
+        else:
+            # frame_rate = str(bpm/60.*notes_per_beat/plot_every)
+            for t, time in enumerate(self.globals['all_times']):
+                #continue
+                if t % self.globals.get('plot_every', 1) !=0:
+                    continue
+                self._make_video_plots_(plot_id=t, time_line=time)
+
+        if self.globals.get('hold_last_frame', 12):
+            self.extend_last_frame()
 
 
-    def _make_video_plots_(self, plot_id=None, time_line=None):
+    def _make_video_plots_(self, plot_id=None, time_line=None, future_lines = 'raw_data'):
         image_fold = self.cmm.globals['output_path']
         if not image_fold:
             image_fold = get_image_folder(name)
@@ -139,12 +161,25 @@ class climate_music_plotter:
             if time_line is None:
                 axes[track].plot(new_times, new_data, color=colour, lw=0.8, label = name)
                 continue
+            axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+
             pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
-            post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
 
             pyplot.axvline(x=time_line, c = 'black', lw = 0.7)
             axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
-            axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+
+            if future_lines == 'thin':
+                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
+                axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+
+            if future_lines == 'raw_data':
+                future_times = np.array([t for t in sorted(track_dict['data'].keys())])
+                future_times = np.ma.masked_outside(future_times,
+                                                    time_line,
+                                                    track_dict['time_range'][1]).compressed()
+                future_data = np.array([self.tracks[track]['data'][t] for t in future_times])
+                future_times, future_data = quantize_time(future_times, future_data)
+                axes[track].plot(future_times, future_data, color=colour, lw=1.5, alpha=0.3)
 
         # edit subplots.
         for pane, ax in numbered_axes.items():
@@ -257,3 +292,23 @@ class climate_music_plotter:
 
         # fig, ax1 = pyplot.subplots()
         # fig.set_size_inches(1920./dpi, 1280./dpi)
+    def extend_last_frame(self):
+        """
+        Copies the last frame for a some seconds (default is 12 seconds).
+        #Copy is more reliable that symbolic links in Windows.
+        """
+        hold_last_frame = self.globals.get('hold_last_frame', 12)
+
+        frame_rate = self.globals.get('frame_rate', 0.) # ie 30
+        if not frame_rate:
+            frame_rate = str(bpm/60.*notes_per_beat/plot_every)
+
+        last_path =  os.path.abspath(sorted(self.video_paths)[-1])
+        last_path_number = int(last_path[-10:-4])
+
+        new_steps = frame_rate * hold_last_frame
+
+        for t in np.arange(new_steps):
+            link_path =  self.video_folder+'img'+str(t+last_path_number+1).zfill(6)+'.png'
+            print('extend_last_frame', t, last_path, '->', link_path)
+            shutil.copy2(last_path, link_path)
