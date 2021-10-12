@@ -12,11 +12,15 @@ global:
     beats_per_chord: &beats_per_chord_anchor 1
 
     # graphical options:
-    plot_every: 10
+    frame_rate: 30
+    plot_every: 100  
     scroll: 0.
     annual_plot: True  
     final_note_duration: 4
-    background_colour: '#F0FFFF' # Azure (very white)
+    hold_last_frame: False
+      #background_colour: '#F0FFFF' # Azure (very white)
+    background_image: 'input/background.png' 
+    text_color: 'white'
       #'#43b3ae' # verdigris (very grey)
       # '#c9ffe5' # Aero Blue )too bright)
       # # '#D3D3D3' # light grey (boring grey)
@@ -26,15 +30,15 @@ global:
     chyron_text: [
           ' ',
           'This is a sonification of marine data from the L4 station, part of the Western Channel Observatory (WCO).',
-          'The WCO is a NERC-funded partnership between Plymouth Marine Laboratory (PML) and the Marine Biological Association.',
+          'The WCO is NERC-funded National Capability operated by the Plymouth Marine Laboratory (PML).',
           'The L4 station is the site of several long term oceanographic and marine biodiversity datasets.',
-          'The L4 buoy site is off the coast of Cornwall & Devon, near the Eddystone Lighthouse.',
-          'In addition to the L4 buoy, data are taken weekly at L4 using the PML research vessels.',
+          'The L4 station is 4 miles off the coast of Cornwall, about halfway to the Eddystone Lighthouse.',
+          'Data are taken every week at L4 using the PML research vessels, and hourly by an automated buoy.',
           ' ',
-          'The annual cycle of both phytoplankton and surface nutrients at L4 can be seen in this data:',
+          'The annual cycle of both phytoplankton and surface nutrients at L4 can be seen in these data:',
           'The nutrients are replenished in the winter by storms mixing nutrient rich deep water with surface layers.',
           'In the spring and summer, the phytoplankton bloom, consuming much of the nutrients.',
-          'In the late summer and autumn, the phytoplankton become limited by low nutrients and less sunlight, and the bloom fades.',
+          'In the late summer and autumn, the phytoplankton become limited by shorter days and increased mixing, and the bloom fades.',
           'The annual cycle repeats, but no two years are quite the same.', 
           ' ',
           'In the music, each of the L4 datasets is linked to a different musical instrument.',
@@ -44,6 +48,7 @@ global:
           ' ',
           'The musification process is fully described in de Mora et al. (2020): DOI:10.5194/gc-3-263-2020',
           'Additional musical pieces are available at www.youtube.com/c/LeedeMora',
+          ' ',
          ]
 
 
@@ -88,7 +93,7 @@ tracks:
       play_new_chords: True
       data_paths: [output/csv/L4/L4_surface_nitrate.csv,   ]
       volume_paths: [output/csv/L4/L4_surface_nitrate.csv,   ]
-      time_range: [2000., 2022.]
+      time_range: [2000., 2020.99999]
       # type options [ shelve, nc, csv]
       data_type: 'wec_csv'
       data_key:  'NITRATE, uM'
@@ -102,10 +107,11 @@ tracks:
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 1.5]
+      plot_range: [0., 1.5]
         #moving_average: None
-      volume_range: [50, 127]
+      volume_range: [60, 110]
       # Plotting details
-      colour: '#2F4F4F' # 'red'
+      colour: '#87CEFA' # 'light blue'
       pane: 1
       y_label: ' ' #Nitrate, uM'
       
@@ -122,7 +128,7 @@ tracks:
       play_new_chords: True
       data_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
       volume_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
-      time_range:  [2000., 2022.]
+      time_range:  [2000., 2020.99999]
       # type options [ shelve, nc, csv]
       data_type: 'wec_csv'
       data_key:  'phosphate, uM'
@@ -134,10 +140,11 @@ tracks:
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 1.]
+      plot_range: [0., 1.]
       #moving_average: None
-      volume_range: [50, 100]
+      volume_range: [60, 115]
       # Plotting details
-      colour: 'purple'
+      colour: '#9370DB' # 'purple'
       pane: 2
       y_label: ' ' #'Phosphate, uM'
 
@@ -152,7 +159,7 @@ tracks:
       play_new_chords: True
       data_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
       volume_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
-      time_range: [2000., 2022.]
+      time_range: [2000., 2020.99999]
       # type options [ shelve, nc, csv]
       data_type: 'wec_csv'
       data_key:  'silicate, uM'
@@ -164,10 +171,11 @@ tracks:
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 11.]
+      plot_range: [0., 12.]  
       #moving_average: None
-      volume_range: [50, 100]
+      volume_range: [60, 115]
       # Plotting details
-      colour: '#8B0000' # dark red
+      colour: '#F5DEB3' # wheat #8B0000' # dark red
       pane: 3
       y_label: ' ' #Silicate, uM'
 
@@ -184,7 +192,7 @@ tracks:
       doi: "doi:10.5285/c9386b5c-b459-782f-e053-6c86abc0d129"
       data_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
       volume_paths: [output/csv/L4/L4_Phytoplankton_BIOMASS_2000-2020.csv,   ]
-      time_range: [2000., 2022.]
+      time_range: [2000., 2020.99999]
       # type options [ shelve, nc, csv]
       data_type: 'wec_csv'
       data_key:  'phytoplankton biomass, mgC m-3'
@@ -196,10 +204,42 @@ tracks:
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 150.]
+      plot_range: [0., 160.]  
       #moving_average: None
-      volume_range: [50, 115]
+      volume_range: [70, 115]
       # Plotting details
-      colour: '#006400' # green 
+      colour: '#98FB98' #'#006400' # green 
       pane: 4
       y_label: ' ' #Phytoplankton biomass, mgC m-3'
+
+  wec_zoo:
+      longname: 'Zooplankton biomass'
+      channel: 0
+      units: ' ' # m-3'
+      beats_per_year: *beats_per_year_anchor
+      notes_per_beat: *notes_per_beat_anchor
+      beats_per_chord: *beats_per_chord_anchor
+      scales: *scales_anchor
+      play_new_chords: True
+      data_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
+      volume_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
+      time_range: [2000., 2020.99999]
+      # type options [ shelve, nc, csv]
+      data_type: 'wec_csv'
+      data_key:  'Zooplankton biomass'
+      data_kwargs: []
+      # Music range, required. CAn be a part of ints or an instrument str
+      #vst: sketch
+      instrument: 'guitar'
+      music_range: [40, 76]  # E to e
+      # data range: set min/max data range to match music range
+      # blank means
+      data_range: [35000., 100000.]
+      plot_range: [30000, 100000.]
+      moving_average: '0.080 years'
+      volume_range: [60, 105]
+      # Plotting details
+      colour: '#FA8072' # salmon
+      pane: 5
+      y_label: ' ' #Zooplankton biomass'
 

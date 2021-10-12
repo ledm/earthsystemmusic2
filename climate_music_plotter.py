@@ -4,6 +4,7 @@ mpl.use('Agg')
 
 import os
 import shutil
+from PIL import Image
 
 from climate_music_maker import climate_music_maker
 from music_utils import folder, symlink
@@ -44,6 +45,12 @@ def quantize_time(times,  data):
         new_data.append(data[i])
     return np.array(new_times), np.array(new_data)
 
+#def calc_time_line_data(t0, t1, d0, d1, time_line):
+#      slope = (raw_data[ind1] - raw_data[ind0])/(raw_times[1] - raw_times[0])
+#      intersect = raw_data[ind1] - slope*raw_times[1]
+#      extra_times = [time_line, post_new_times.compressed()[0]]
+
+
 
 class climate_music_plotter:
     def __init__(self, cmm):
@@ -57,23 +64,33 @@ class climate_music_plotter:
         self.video_paths = []
         self._make_data_plots()
         self._make_pitch_plots()
-
+        self.textcolor = self.globals.get('text_color', 'black')
         #assert 0
 
         if self.globals.get('frame_rate', False):
-            data_rate = self.globals['bpm']/60.*self.globals['notes_per_beat'] # Notes per second ie 5
+
+            beats_per_year = self.globals.get('beats_per_year', 1)
+
+            data_rate = self.globals['bpm']/60.*self.globals['notes_per_beat']/beats_per_year # Notes per second ie 5
             # data rate is number of years per second
             # frame rate is number of frames per second.
             frame_rate = self.globals.get('frame_rate', 0.) # ie 30
             data_per_frame = data_rate/ frame_rate  # ie 1.66 years of data per frame
+            
 
             time_steps = np.arange(
                 self.globals['all_times'].min(),
-                self.globals['all_times'].max() + 1. + data_per_frame,
+                self.globals['all_times'].max()  + data_per_frame,
                 data_per_frame)
+            #rint(time_steps[0], time_steps[-1])
+            #ssert 0
+            self._final_frame = len(time_steps)
             for t, time in enumerate(time_steps):
-                    print('plotting: frame', t,'time:', time)
-                    self._make_video_plots_(plot_id=t, time_line=time)
+                print('plotting: frame', t,'time:', time)
+                if t % self.globals.get('plot_every', 1) !=0:
+                    continue
+                print('plotting: frame', t,'time:', time)
+                self._make_video_plots_(plot_id=t, time_line=time)
         else:
             # frame_rate = str(bpm/60.*notes_per_beat/plot_every)
             for t, time in enumerate(self.globals['all_times']):
@@ -86,7 +103,7 @@ class climate_music_plotter:
             self.extend_last_frame()
 
 
-    def _make_video_plots_(self, plot_id=None, time_line=None, future_lines = 'raw_data'):
+    def _make_video_plots_(self, plot_id=None, time_line=None):
         image_fold = self.cmm.globals['output_path']
         if not image_fold:
             image_fold = get_image_folder(name)
@@ -111,6 +128,14 @@ class climate_music_plotter:
         if self.globals.get('background_colour', False):
             fig.patch.set_facecolor(self.globals.get('background_colour', 'white'))
 
+        if self.globals.get('background_image', False):
+            datafile = self.globals.get('background_image', False)
+            ax1 = fig.add_axes([0.0, 0.0, 1.00, 1.00])
+            #ax1.get_xaxis().set_visible(False)
+            #ax1.get_yaxis().set_visible(False)
+            img = pyplot.imread(datafile)
+            ax1.imshow(img, zorder=0)# alpha=0.2) #xtent=[0.5, 8.0, 1.0, 7.0])
+            
         axes = {}
         panes  = {}
         numbered_axes = {}
@@ -121,7 +146,7 @@ class climate_music_plotter:
             panes[track] = self.tracks[track].get('pane', i+1)
         panes_count = max({pane:True for track, pane in panes.items()}.keys())
         gs1 = gridspec.GridSpec(panes_count, 1)
-        gs1.update(wspace=0., hspace=0.) # set the spacing between axes.
+        gs1.update(wspace=0., hspace=0.15) # set the spacing between axes.
 
         subplot_indices = {}
         for track, pane in panes.items():
@@ -175,39 +200,79 @@ class climate_music_plotter:
             if time_line is None:
                 axes[track].plot(new_times, new_data, color=colour, lw=0.8, label = name)
                 continue
-            # axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
-            #
-            # pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
-            #
-            # pyplot.axvline(x=time_line, c = 'black', lw = 0.7)
-            # axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
-            #
-            # if future_lines == 'thin':
-            #     post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
-            #     axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
-            #
-            # if future_lines == 'raw_data':
-            #     future_times = np.array([t for t in sorted(track_dict['data'].keys())])
-            #     future_times = np.ma.masked_outside(future_times,
-            #                                         time_line,
-            #                                         track_dict['time_range'][1]).compressed()
-            #     future_data = np.array([self.tracks[track]['data'][t] for t in future_times])
-            #     future_times, future_data = quantize_time(future_times, future_data)
-            #     axes[track].plot(future_times, future_data, color=colour, lw=1.5, alpha=0.3)
-
+            axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+            
             pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
+            
+            pyplot.axvline(x=time_line, c = self.textcolor, lw = 0.9,zorder=2)
+            axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
 
-            if self.globals.get('show_raw_data', False):
+            # Draw up to the time line:
+            lasttime = np.ma.masked_where(pre_new_data.mask, new_times).compressed()[-1]
+            dat = pre_new_data.compressed()[-1]
+            axes[track].plot([lasttime, time_line], [dat, dat], color=colour, lw=1.5)
+
+            if self.tracks[track].get('plot_range', False):
+                axes[track].set_ylim(self.tracks[track].get('plot_range',[None, None]))
+
+            if self.globals.get('show_raw_data', False): 
+                future_lines = 'raw_data'
+            else: future_lines = 'thin'
+ 
+            if future_lines == 'thin':
+                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
+                axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+            
+            if future_lines == 'raw_data':
+#                future_times = np.array([t for t in sorted(track_dict['data'].keys())])
+#                future_times = np.ma.masked_outside(future_times,
+#                                                    time_line,
+#                                                    track_dict['time_range'][1]).compressed()
+#                future_data = np.array([self.tracks[track]['data'][t] for t in future_times])
+#                future_times, future_data = quantize_time(future_times, future_data)
+#                axes[track].plot(future_times, future_data, color=colour, lw=1.5, alpha=0.3)
+
                 post_new_data = np.ma.masked_where(raw_times <= time_line, raw_data)
                 post_new_times = raw_times.copy()
 
-            else:
-                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
-                post_new_times = new_times.copy()
+                axes[track].plot(post_new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
 
-            pyplot.axvline(x=time_line, c = 'black', lw = 0.7)
-            axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
-            axes[track].plot(post_new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+                # Draw from the time line:
+                t1 =  np.ma.masked_where(post_new_data.mask, post_new_times).compressed()
+                if len(t1): 
+                    t1=t1[0]
+                    ind1 = np.where(post_new_times==t1)[0]
+                    if isinstance(ind1, (list, tuple, np.ndarray, np.ma.array)): 
+                        ind1 = ind1[0]
+                    ind0 = ind1-1
+                    #print(ind0, ind1,type(ind0), type(ind1))
+                    #print(ind0, ind1, raw_times[ind0], raw_data[ind0],raw_times[ind1], raw_data[ind1])
+                    if raw_data[ind0]:
+                        slope = (raw_data[ind1] - raw_data[ind0])/(raw_times[ind1] - raw_times[ind0]) 
+                        intersect = raw_data[ind1] - slope*raw_times[ind1]
+                        time_line_d = slope*time_line + intersect
+                        extra_times = [time_line, raw_times[ind1]]
+                        extra_dat = [time_line_d, raw_data[ind1]]
+                        axes[track].plot(extra_times, extra_dat, color=colour, lw=1.5, alpha=0.3)
+
+
+
+#            pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
+#
+#            if self.globals.get('show_raw_data', False):
+#                post_new_data = np.ma.masked_where(raw_times <= time_line, raw_data)
+#                post_new_times = raw_times.copy()
+#
+#            else:
+#                post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
+#                post_new_times = new_times.copy()
+#
+#            pyplot.axvline(x=time_line, c = self.textcolor, lw = 0.7)
+#            axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
+#            axes[track].plot(post_new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
+#            if self.tracks[track].get('plot_range', False):
+#                axes[track].set_ylim(self.tracks[track].get('plot_range',[None, None]))
+
 
         # edit subplots.
         for pane, ax in numbered_axes.items():
@@ -216,7 +281,8 @@ class climate_music_plotter:
             #legend = ax.legend(frameon=False, loc=legend_loc)
             legend = ax.legend(loc=legend_loc, framealpha=0.)
             legend.get_frame().set_linewidth(0.0)
-
+            for text in legend.get_texts():
+                pyplot.setp(text, color = self.textcolor)
 
             # Hide the right and top spines
             ax.spines['right'].set_visible(False)
@@ -240,26 +306,65 @@ class climate_music_plotter:
 
             if self.globals.get('background_colour', False):
                 ax.set_facecolor(self.globals.get('background_colour', 'white'))
+            else:
+                ax.patch.set_alpha(0.)
+            
+            # set to a standard colour
+            ax.spines['bottom'].set_color(self.textcolor)
+            #ax.spines['top'].set_color(self.textcolor)
+            #ax.spines['right'].set_color(self.textcolor)
+            ax.spines['left'].set_color(self.textcolor)
+            ax.tick_params(axis='x', colors=self.textcolor)
+            ax.tick_params(axis='y', colors=self.textcolor)
+            ax.yaxis.label.set_color(self.textcolor)
+            ax.xaxis.label.set_color(self.textcolor)
 
         # Add Chyron text:
         if self.globals.get('chyron_text',False):
             chryons = self.globals.get('chyron_text',False)
             fig.subplots_adjust(bottom=0.2)
-            total_figs = len(self.globals['all_times'].keys())
+            if self.globals.get('frame_rate', False):
+                total_figs = self._final_frame
+            else:
+                total_figs = len(self.globals['all_times'])
             chy_no = int((float(plot_id)/float(total_figs))*len(chryons))
             pyplot.figtext(0.5,0.1,chryons[chy_no],
                         horizontalalignment='center',
                         verticalalignment='center',
-                        fontsize='small')
-
+                        fontsize='small',
+                        color=self.textcolor)
 
 
         title = self.globals.get('title', '')
-        pyplot.suptitle(title)
+        pyplot.suptitle(title,color=self.textcolor)
+
+#       if self.globals.get('background_image', False):
+#           datafile = self.globals.get('background_image', False)
+#           ax1 = fig.add_axes([0.0, 0.0, 1.00, 1.00])
+#           #ax1.get_xaxis().set_visible(False)
+#           #ax1.get_yaxis().set_visible(False)
+#           img = pyplot.imread(datafile)
+#           ax1.imshow(img, zorder=0,  alpha=0.2) #xtent=[0.5, 8.0, 1.0, 7.0])
+
 
         print("saving", outpath)
-        pyplot.savefig(outpath, dpi=dpi)
+        if self.globals.get('background_image', False):
+            pyplot.savefig(outpath, dpi=dpi, transparent=True)
+        else: pyplot.savefig(outpath, dpi=dpi)
         pyplot.close()
+
+        if self.globals.get('background_image', False):
+
+            background_path =  self.globals.get('background_image', False)
+            background = Image.open(background_path).convert(mode='RGBA')
+            foreground = Image.open(outpath)
+            final = Image.new("RGBA", background.size) 
+
+            final = Image.alpha_composite(final, background,)
+            final = Image.alpha_composite(final, foreground,)
+
+            final.save(outpath)
+
 
 
     def _make_data_plots(self,):
@@ -297,7 +402,7 @@ class climate_music_plotter:
             ax.plot(new_times, new_data, color=colour, lw=0.2)#, label = name)
             #break
 
-        pyplot.legend()
+        leg = pyplot.legend()
         pyplot.suptitle(self.globals['title'])
         #fig.tight_layout()
         print("saving", outpath)

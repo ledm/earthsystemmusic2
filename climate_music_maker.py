@@ -203,11 +203,13 @@ def calculate_moving_average(data, moving_average, debug = False):
         elif window_units in ['days',]:
             window = window_width/(2.*365.25)
 
+        #print(window, window_width)
         for i, t in enumerate(arr_times):
             tmin = t - window
             tmax = t + window
             arr = np.ma.masked_where((arr_times < tmin) + (arr_times > tmax) + arr_data.mask, arr_data)
             output[t] = arr.mean()
+            #print(i, t, tmin, tmax, output[t],np.ma.masked_where(arr.mask, arr_times).compressed(),  arr.compressed())
 
     elif type(window_width) in [list, tuple, dict]:
         for i, t in enumerate(arr_times):
@@ -355,6 +357,8 @@ class climate_music_maker:
         times = times.compressed()
         data = data.compressed()
         data = {t:d for t,d in zip(times,data)}
+        #print("_enforce_mask_", data)
+        #assert 0
         return data
 
     def _create_pitches_(self, track): #times, data, time_range, data_range, music_range, notes_per_beat = 4):
@@ -421,6 +425,7 @@ class climate_music_maker:
         number_dat = len(self.tracks[track]['data'].keys())
         ordered_times = sorted(list(self.tracks[track]['data'].keys()))
         for i, time in enumerate(ordered_times):
+            if time > self.tracks[track]['time_range'][1]: assert 0
             dat = self.tracks[track]['data'][time]
             if i < number_dat -1:
                 dur = (ordered_times[i+1] - time)*(beats_per_year)/notes_per_beat
@@ -434,7 +439,6 @@ class climate_music_maker:
             music_locations[time] = [bar, location - (bar*notes_per_bar)]
             all_times[time] = True
             print(time,(time - time_range[0]),'->', location, music_locations[time])
-
         self.globals['all_times'].update(all_times)
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
