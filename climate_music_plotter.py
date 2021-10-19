@@ -77,10 +77,11 @@ class climate_music_plotter:
             frame_rate = self.globals.get('frame_rate', 0.) # ie 30
             data_per_frame = data_rate/ frame_rate  # ie 1.66 years of data per frame
             
-
+            video_timerange = [self.globals['all_times'].min(), self.globals['all_times'].max()  + data_per_frame]
+            video_timerange = self.globals.get('video_timerange', video_timerange)
             time_steps = np.arange(
-                self.globals['all_times'].min(),
-                self.globals['all_times'].max()  + data_per_frame,
+                video_timerange[0],
+                video_timerange[1],
                 data_per_frame)
             #rint(time_steps[0], time_steps[-1])
             #ssert 0
@@ -98,7 +99,7 @@ class climate_music_plotter:
                 if t % self.globals.get('plot_every', 1) !=0:
                     continue
                 self._make_video_plots_(plot_id=t, time_line=time)
-
+     
         if self.globals.get('hold_last_frame', 12):
             self.extend_last_frame()
 
@@ -122,7 +123,15 @@ class climate_music_plotter:
         #    continue
         fig = pyplot.figure()
         dpi = self.globals.get('dpi', 250.)
-        image_size = self.globals.get('image_size', [1920., 1280.])
+        video_format = self.globals.get('image_res','HD')
+        if video_format == 'HD':
+            image_size = [1920., 1280.]
+            dpi = 250.
+        if video_format == '4K':
+            image_size = [3840., 2160.]
+            dpi = 390.
+
+        #image_size = self.globals.get('image_size', [1920., 1080.])
         fig.set_size_inches(image_size[0]/dpi,image_size[1]/dpi)
 
         if self.globals.get('background_colour', False):
@@ -168,6 +177,7 @@ class climate_music_plotter:
             pyplot.sca(axes[track])
             colour = track_dict['colour']
             name = track_dict['longname']
+            instrument = track_dict.get('instrument', '')
 
             # Recalculated data
             recalc_times = sorted(track_dict['recalc_data'].keys())
@@ -200,25 +210,37 @@ class climate_music_plotter:
             if time_line is None:
                 axes[track].plot(new_times, new_data, color=colour, lw=0.8, label = name)
                 continue
-            axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+            #axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
             
             pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
             
-            pyplot.axvline(x=time_line, c = self.textcolor, lw = 0.9,zorder=2)
-            axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = name)
+            if plot_id != self._final_frame -1:
+                # no vertical line on the last frame.
+                pyplot.axvline(x=time_line, c = self.textcolor, lw = 0.9,zorder=2)
+#            else:
+#                assert 0
+            #pyplot.text(0.1, 0.9, instrument , ha='center', va='center', transform= axes[track].transAxes, size='x-small',c = self.textcolor)
 
             # Draw up to the time line:
-            lasttime = np.ma.masked_where(pre_new_data.mask, new_times).compressed()[-1]
-            dat = pre_new_data.compressed()[-1]
-            axes[track].plot([lasttime, time_line], [dat, dat], color=colour, lw=1.5)
+            #lasttime = np.ma.masked_where(pre_new_data.mask, new_times).compressed()#[-1]
+            #if len(lasttime):
+            #    lasttime = lasttime[-1]
+            #    dat = pre_new_data.compressed()[-1]
+            #    axes[track].plot([lasttime, time_line], [dat, dat], color=colour, lw=1.5)
 
             if self.tracks[track].get('plot_range', False):
                 axes[track].set_ylim(self.tracks[track].get('plot_range',[None, None]))
 
             if self.globals.get('show_raw_data', False): 
-                future_lines = 'raw_data'
+                future_lines = 'scatter' 
             else: future_lines = 'thin'
- 
+
+            if future_lines == 'scatter':
+                post_new_data = np.ma.masked_where(raw_times <= time_line, raw_data)
+                if self.tracks[track].get('plot_range', False):
+                    post_new_data = np.ma.clip(post_new_data, self.tracks[track]['plot_range'][0],self.tracks[track]['plot_range'][1])
+                axes[track].scatter(raw_times, post_new_data, marker='o', s=5, color=colour, label=name )
+
             if future_lines == 'thin':
                 post_new_data = np.ma.masked_where(new_times <= time_line, new_data)
                 axes[track].plot(new_times, post_new_data, color=colour, lw=1.5, alpha=0.3)
@@ -254,7 +276,26 @@ class climate_music_plotter:
                         extra_times = [time_line, raw_times[ind1]]
                         extra_dat = [time_line_d, raw_data[ind1]]
                         axes[track].plot(extra_times, extra_dat, color=colour, lw=1.5, alpha=0.3)
+                        #axes[track].scatter(extra_times, extra_dat, marker='o', color=colour) #lpha=0.3)
 
+
+            # Draw instrument second:
+            #axes[track].plot(new_times, new_data, color=colour, lw=0., alpha=0.)
+            #axes[track].plot(new_times, pre_new_data, color=colour, lw=1.5, label = instrument)
+           
+            #ote_times, note_edges = recalc_times
+            recalc_times = sorted(track_dict['recalc_data'].keys())
+            for t in recalc_times:
+                note_edges = track_dict['recalc_times'][t]
+                if time_line < note_edges[0]: continue
+                value = track_dict['recalc_data'][t]
+                #print(t, note_edges, value, time_line)
+                if note_edges[0] <= time_line < note_edges[1]:
+                    axes[track].plot([note_edges[0], time_line], [value, value], color=colour, lw=2.5,label = instrument, )
+                if time_line >= note_edges[1]:
+                    axes[track].plot(note_edges, [value, value], color=colour, lw=2.5,label = instrument)
+
+            #assert 0
 
 
 #            pre_new_data = np.ma.masked_where(new_times > time_line, new_data)
@@ -278,11 +319,21 @@ class climate_music_plotter:
         for pane, ax in numbered_axes.items():
             pyplot.sca(ax)
             legend_loc =  self.globals.get('legend_loc', 'lower left')
+
+            # sort or reorder the labels and handles
+            current_handles, current_labels = pyplot.gca().get_legend_handles_labels()
+            reversed_handles = list(reversed(current_handles))
+            reversed_labels = list(reversed(current_labels))
+            hands, labs = [], []
+            for l,h in zip(reversed_labels,reversed_handles):
+                if l not in labs:
+                    labs.append(l)
+                    hands.append(h)
             #legend = ax.legend(frameon=False, loc=legend_loc)
-            legend = ax.legend(loc=legend_loc, framealpha=0.)
+            legend = ax.legend(hands, labs, loc=legend_loc, framealpha=0. , markerfirst=False)
             legend.get_frame().set_linewidth(0.0)
             for text in legend.get_texts():
-                pyplot.setp(text, color = self.textcolor)
+                pyplot.setp(text, color = self.textcolor, size='x-small')
 
             # Hide the right and top spines
             ax.spines['right'].set_visible(False)
@@ -291,12 +342,18 @@ class climate_music_plotter:
             # Only show ticks on the left and bottom spines
             ax.yaxis.set_ticks_position('left')
             ax.xaxis.set_ticks_position('bottom')
+            pyplot.yticks(fontsize='x-small')
 
             ax.set_ylabel(ylabels[pane])
-            if pane == panes_count:
+            if pane == panes_count: # ie bottom pane in the stack
                 if self.globals.get('annual_plot', False):
                     xlabel = str(int(time_line))
-                    ax.set_xticklabels([])
+                    ax.set_xticks([int(time_line)+a/12. for a in range(12)])#,labels=None)
+                    months= ['J', 'F', 'M', 'A', 'M', 'J','J', 'A', 'S', 'O', 'N', 'D',]
+                    months = ['        '+m for m in months]
+                    ax.set_xticklabels(months, fontsize='x-small')
+                    for tick in ax.get_xticklabels():
+                        tick.set_horizontalalignment("left")
                 else:
                     xlabel = self.globals.get('xlabel', 'Year')
                 ax.set_xlabel(xlabel)
@@ -328,15 +385,29 @@ class climate_music_plotter:
             else:
                 total_figs = len(self.globals['all_times'])
             chy_no = int((float(plot_id)/float(total_figs))*len(chryons))
+            chy_fl = (float(plot_id)/float(total_figs))*len(chryons)-chy_no # number beteen 0 and 1
+            chy_0 = (chy_no /len(chryons))*total_figs
+            chy_p1 = ((chy_no+1) /len(chryons))*total_figs
+
+            #fade in and out:
+            fr = self.globals.get('frame_rate', False)
+            chy_alpha=1.
+            if fr and (plot_id - chy_0)<= fr: # fade in
+                chy_alpha = np.abs(plot_id - chy_0)/fr # fade in over one second.
+
+            if fr and (chy_p1 -  plot_id) <= fr: # fade out
+                chy_alpha = np.abs(chy_p1 -  plot_id)/fr # fade out over one second.
+
             pyplot.figtext(0.5,0.1,chryons[chy_no],
+                        alpha = chy_alpha,
                         horizontalalignment='center',
                         verticalalignment='center',
-                        fontsize='small',
+                        fontsize='x-small',
                         color=self.textcolor)
 
 
         title = self.globals.get('title', '')
-        pyplot.suptitle(title,color=self.textcolor)
+        pyplot.suptitle(title,color=self.textcolor, size='medium')
 
 #       if self.globals.get('background_image', False):
 #           datafile = self.globals.get('background_image', False)

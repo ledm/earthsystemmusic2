@@ -1,8 +1,8 @@
 
 global:
     name: 'Western Channel Observatory'
-    title: 'Western Channel Observatory'
-    output_path: 'output/WCO'
+    title: 'The Sonification of the Western Channel Observatory'
+    output_path: 'output/WCO_4K'
     bpm: 90.
     #Notes per beat is actually "years per musical beat". 
     # with weekly L4 data, want 2 data points per chord, or about
@@ -10,16 +10,22 @@ global:
     notes_per_beat: &notes_per_beat_anchor 2   
       #beats_per_chord: &beats_per_chord_anchor 1
     beats_per_chord: &beats_per_chord_anchor 1
+    quantize: &quantize_anchor 'semi-quaver' 
 
     # graphical options:
+    image_res: '4K'  # 4K: 2840 x 2160
     frame_rate: 30
-    plot_every: 100  
+    plot_every: 1  
+    video_timerange: [2000., 2020.99999] 
     scroll: 0.
     annual_plot: True  
     final_note_duration: 4
-    hold_last_frame: False
-      #background_colour: '#F0FFFF' # Azure (very white)
-    background_image: 'input/background.png' 
+    hold_last_frame: False  # best to have too long than too short here!
+
+    #background_colour: '#F0FFFF' # Azure (very white)
+    background_image: 'input/background_4K.png'
+      #background_image: 'input/background.png'
+
     text_color: 'white'
       #'#43b3ae' # verdigris (very grey)
       # '#c9ffe5' # Aero Blue )too bright)
@@ -28,25 +34,26 @@ global:
     legend_loc: 'upper right'
     show_raw_data: True
     chyron_text: [
-          ' ',
+          ' ', #1
           'This is a sonification of marine data from the L4 station, part of the Western Channel Observatory (WCO).',
-          'The WCO is NERC-funded National Capability operated by the Plymouth Marine Laboratory (PML).',
-          'The L4 station is the site of several long term oceanographic and marine biodiversity datasets.',
-          'The L4 station is 4 miles off the coast of Cornwall, about halfway to the Eddystone Lighthouse.',
-          'Data are taken every week at L4 using the PML research vessels, and hourly by an automated buoy.',
+          'The figure shows both the original data (points) and the data after sonification (lines).',
+          'Each dataset is linked to a different sound: Nitrate is performed by violin, Phytoplankton by cello, and Zooplankton by piano.',
+          'The WCO is NERC-funded UK National Capability operated by the Plymouth Marine Laboratory (PML).',
+          'The L4 station is the site of several long-term oceanographic and marine biodiversity datasets.',
+          'L4 is four miles off the coast of Cornwall; about halfway to the Eddystone Lighthouse from Plymouth, Devon.',
+          'Data are taken every week at L4 using the PML research vessels and hourly by the automated buoy.',
           ' ',
-          'The annual cycle of both phytoplankton and surface nutrients at L4 can be seen in these data:',
-          'The nutrients are replenished in the winter by storms mixing nutrient rich deep water with surface layers.',
-          'In the spring and summer, the phytoplankton bloom, consuming much of the nutrients.',
-          'In the late summer and autumn, the phytoplankton become limited by shorter days and increased mixing, and the bloom fades.',
+          'The annual cycle of surface nutrients, phytoplankton and zooplankton at L4 can be seen in these data.',
+          'The nutrients are replenished in the winter by storms, which mix the nutrient rich deep water with the surface layers.',
+          #          'With longer days and high nutrient availability, phytoplankton bloom in the Spring and Summer, consuming much of the nutrients.',
+          'In the Spring and Summer, the longer days and high nutrient availability allow the phytoplankton to bloom and consume much of the nutrients.',
+          'By the Autumn, phytoplankton are consumed by zooplankton, become limited by shorter days, less nutrients and increased mixing, so the bloom fades.',
           'The annual cycle repeats, but no two years are quite the same.', 
           ' ',
-          'In the music, each of the L4 datasets is linked to a different musical instrument.',
-          'Nitrate: violin, Phosphate: cello, Silicate: viola, Phytoplankton: Piano.',
-          'The data value is linked to the pitch. High data creates louder and higher pitch notes.',  
-          'The figure shows both the original data and the data after sonification.', 
-          ' ',
-          'The musification process is fully described in de Mora et al. (2020): DOI:10.5194/gc-3-263-2020',
+          'In the music, the data value is linked to the pitch of the instrument: high data values generate higher pitch notes.',
+          'The choice of notes is determined by a repeating 12 bar chord progression in G minor.',   
+          'Each month of L4 data is used to generate one musical beat and rhythmic context is added through the bass and drum parts.',
+          'The musification process is fully documented in de Mora et al. (2020): DOI:10.5194/gc-3-263-2020',
           'Additional musical pieces are available at www.youtube.com/c/LeedeMora',
           ' ',
          ]
@@ -60,13 +67,14 @@ global:
 
 tracks:
   wec_nitrate:
-      longname: 'Nitrate'
+      longname: 'Nitrate concentration, mmol m$^{-3}$' # '$\mu$M'
       # longname: 'SSP1 1.9 - Violin'
       channel: 0
       units: 'uM'
       beats_per_year: *beats_per_year_anchor  
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor 
+      quantize: *quantize_anchor
         #     scales: &scales_anchor ['Gmaj', 'Gmaj', 'Gmaj', 'Gmaj', 'Gmin', 'Gmin', 'Gmin', 'Gmin', # 1 beat each
         #                    'Amin7', 'Amin7', 'Dmaj', 'Dmaj',  'Dmaj', 'Dmaj',  'Dmaj', 'Dmaj', 
         #                   'Bbmin', 'Bbmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin', 'Gmin',
@@ -102,90 +110,94 @@ tracks:
       #vst: sketch
       #      instrument: 'double bass'
         #      music_range: [24, 60]
-      instrument: 'violin'
+      instrument: 'Violin'
       music_range: [67, 102]
+#      instrument: 'Cello'
+#      music_range: [36, 79]
+
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 1.5]
       plot_range: [0., 1.5]
-        #moving_average: None
+        
+      #moving_average: None
       volume_range: [60, 110]
       # Plotting details
       colour: '#87CEFA' # 'light blue'
       pane: 1
       y_label: ' ' #Nitrate, uM'
       
+#  wec_phosphate:
+#      longname: 'Phosphate'
+#      channel: 0
+#      units: 'uM'
+#      beats_per_year: *beats_per_year_anchor
+#      notes_per_beat: *notes_per_beat_anchor
+#      beats_per_chord: *beats_per_chord_anchor
+#      scales: *scales_anchor 
+#      play_new_chords: True
+#      data_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
+#      volume_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
+#      time_range:  [2000., 2020.99999]
+#      # type options [ shelve, nc, csv]
+#      data_type: 'wec_csv'
+#      data_key:  'phosphate, uM'
+#      data_kwargs: []
+#      # Music range, required. CAn be a part of ints or an instrument str
+#      #vst: sketch
+#      instrument: 'Cello'
+#      music_range: [36, 79]
+#      # data range: set min/max data range to match music range
+#      # blank means
+#      data_range: [0., 1.]
+#      plot_range: [0., 1.]
+#      #moving_average: None
+#      volume_range: [60, 115]
+#      # Plotting details
+#      colour: '#9370DB' # 'purple'
+#      pane: 2
+#      y_label: ' ' #'Phosphate, uM'
 
-
-  wec_phosphate:
-      longname: 'Phosphate'
-      channel: 0
-      units: 'uM'
-      beats_per_year: *beats_per_year_anchor
-      notes_per_beat: *notes_per_beat_anchor
-      beats_per_chord: *beats_per_chord_anchor
-      scales: *scales_anchor 
-      play_new_chords: True
-      data_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
-      volume_paths: [output/csv/L4/L4_surface_phosphate.csv,   ]
-      time_range:  [2000., 2020.99999]
-      # type options [ shelve, nc, csv]
-      data_type: 'wec_csv'
-      data_key:  'phosphate, uM'
-      data_kwargs: []
-      # Music range, required. CAn be a part of ints or an instrument str
-      #vst: sketch
-      instrument: 'Cello'
-      music_range: [36, 79]
-      # data range: set min/max data range to match music range
-      # blank means
-      data_range: [0., 1.]
-      plot_range: [0., 1.]
-      #moving_average: None
-      volume_range: [60, 115]
-      # Plotting details
-      colour: '#9370DB' # 'purple'
-      pane: 2
-      y_label: ' ' #'Phosphate, uM'
-
-  wec_silicate:
-      longname: 'Silicate'
-      channel: 0
-      units: 'uM'
-      beats_per_year: *beats_per_year_anchor
-      notes_per_beat: *notes_per_beat_anchor
-      beats_per_chord: *beats_per_chord_anchor
-      scales: *scales_anchor 
-      play_new_chords: True
-      data_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
-      volume_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
-      time_range: [2000., 2020.99999]
-      # type options [ shelve, nc, csv]
-      data_type: 'wec_csv'
-      data_key:  'silicate, uM'
-      data_kwargs: []
-      # Music range, required. CAn be a part of ints or an instrument str
-      #vst: sketch
-      instrument: 'viola'
-      music_range: [48, 88]
-      # data range: set min/max data range to match music range
-      # blank means
-      data_range: [0., 11.]
-      plot_range: [0., 12.]  
-      #moving_average: None
-      volume_range: [60, 115]
-      # Plotting details
-      colour: '#F5DEB3' # wheat #8B0000' # dark red
-      pane: 3
-      y_label: ' ' #Silicate, uM'
+# wec_silicate:
+#      longname: 'Silicate'
+#      channel: 0
+#      units: 'uM'
+#      beats_per_year: *beats_per_year_anchor
+#      notes_per_beat: *notes_per_beat_anchor
+#      beats_per_chord: *beats_per_chord_anchor
+#      scales: *scales_anchor 
+#      play_new_chords: True
+#      data_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
+#      volume_paths: [output/csv/L4/L4_surface_silicate.csv,   ]
+#      time_range: [2000., 2020.99999]
+#      # type options [ shelve, nc, csv]
+#      data_type: 'wec_csv'
+#      data_key:  'silicate, uM'
+#      data_kwargs: []
+#      # Music range, required. CAn be a part of ints or an instrument str
+#      #vst: sketch
+#      instrument: 'viola'
+#      music_range: [48, 88]
+#      # data range: set min/max data range to match music range
+#      # blank means
+#      data_range: [0., 11.]
+#      plot_range: [0., 12.]  
+#      #moving_average: None
+#      volume_range: [60, 115]
+#      # Plotting details
+#      colour: '#F5DEB3' # wheat #8B0000' # dark red
+#      pane: 3
+#      y_label: ' ' #Silicate, uM'
 
   wec_phyto:
-      longname: 'Phytoplankton biomass'
+      longname: 'Phytoplankton biomass, mg C m$^{-3}$'
       channel: 0
       units: 'mgC m-3'
       beats_per_year: *beats_per_year_anchor
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor
+      quantize: *quantize_anchor
+
       scales: *scales_anchor
       play_new_chords: True
       # downloaded from: https://www.bodc.ac.uk/data/published_data_library/catalogue/10.5285/c9386b5c-b459-782f-e053-6c86abc0d129/
@@ -199,30 +211,37 @@ tracks:
       data_kwargs: []
       # Music range, required. CAn be a part of ints or an instrument str
       #vst: sketch
-      instrument: 'piano'
-      music_range: [43, 91]  # g to g
+      instrument: 'Cello'
+      music_range: [36, 79]
+
+#      instrument: 'piano'
+#      music_range: [43, 91]  # g to g
       # data range: set min/max data range to match music range
       # blank means
       data_range: [0., 150.]
       plot_range: [0., 160.]  
       #moving_average: None
-      volume_range: [70, 115]
+      volume_range: [90, 115]
       # Plotting details
       colour: '#98FB98' #'#006400' # green 
-      pane: 4
-      y_label: ' ' #Phytoplankton biomass, mgC m-3'
+      pane: 2
+      y_label: ' ' # mgC m-3' #Phytoplankton biomass, mgC m-3'
 
   wec_zoo:
-      longname: 'Zooplankton biomass'
+      longname: 'Zooplankton biomass, mg C m$^{-3}$'
       channel: 0
       units: ' ' # m-3'
       beats_per_year: *beats_per_year_anchor
       notes_per_beat: *notes_per_beat_anchor
       beats_per_chord: *beats_per_chord_anchor
+      quantize: *quantize_anchor
+
       scales: *scales_anchor
       play_new_chords: True
-      data_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
-      volume_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
+      data_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020_mgm-3.csv,]
+      volume_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020_mgm-3.csv,]
+        #data_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
+        #volume_paths: [output/csv/L4/L4_zooplankton_biomass_2000-2020.csv,   ]
       time_range: [2000., 2020.99999]
       # type options [ shelve, nc, csv]
       data_type: 'wec_csv'
@@ -230,16 +249,18 @@ tracks:
       data_kwargs: []
       # Music range, required. CAn be a part of ints or an instrument str
       #vst: sketch
-      instrument: 'guitar'
-      music_range: [40, 76]  # E to e
+      instrument: 'Piano'
+      music_range: [43, 91]  # g to g
+#      instrument: 'guitar'
+#      music_range: [40, 76]  # E to e
       # data range: set min/max data range to match music range
       # blank means
-      data_range: [35000., 100000.]
-      plot_range: [30000, 100000.]
-      moving_average: '0.080 years'
-      volume_range: [60, 105]
+      data_range: [30., 110.]
+      plot_range: [30, 120.]
+#     moving_average: '0.06 years'
+      volume_range: [70, 100]
       # Plotting details
       colour: '#FA8072' # salmon
-      pane: 5
-      y_label: ' ' #Zooplankton biomass'
+      pane: 3
+      y_label: ' ' #mgC m-3' #Zooplankton biomass'
 

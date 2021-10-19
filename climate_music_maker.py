@@ -75,7 +75,12 @@ def load_wec_csv(track_dict, path):
     return data
 
 
-
+def decimal_time_to_dtstr(time):
+    #approx datetime conversion:
+    yr = int(time)
+    mn = int((time - yr)*12.)
+    day = int((time - yr - (mn/12.))*365.)
+    return '-'.join([str(yr), str(mn+1), str(day+1)])
 
 
 def load_shelve(track_dict, path):
@@ -149,6 +154,7 @@ def pitch_to_value(pitch, data_range, music_range):
 
 	value = (fraction * data_extent) + data_range[0]
 	return value
+
 
 def time_to_placement(time, time_range, notes_per_beat):
     """
@@ -250,6 +256,9 @@ class climate_music_maker:
                                     self.globals['name'], '.mid'])
         self.debug = self.globals.get('debug', True)
         self.tracks = self.yml['tracks']
+
+        self.beats_per_year = self.globals.get('beats_per_year', 1)
+
 
         for track, track_dict in self.tracks.items():
 
@@ -418,6 +427,13 @@ class climate_music_maker:
         max_duration = 1. / notes_per_beat
         notes_per_bar = self.tracks[track].get('notes_per_bar', 4.) #(typically)
 
+        quantize = self.tracks[track].get('quantize', False)
+        if quantize in ['whole',  'semibreve']: quant = 0.25
+        if quantize in ['half', 'minim']:quant = 0.5 # ie
+        if quantize in ['quarter', 'crotchet']: quant = 1. # ie
+        if quantize in ['eighth', 'quaver']: quant = 2. # ie
+        if quantize in ['sixteenth', 'semi-quaver']: quant = 4. # ie
+
         locations = {}
         durations = {}
         music_locations = {} # bar, decimal time
@@ -434,6 +450,11 @@ class climate_music_maker:
             durations[time] = dur
             location = (time - time_range[0])*(beats_per_year)/notes_per_beat
             print(time,(time - time_range[0]),'->', location)
+            if quant:
+                location_i = int(location)
+                loc_frac = int((location - location_i)*quant)/quant
+                print('quantized:',location, 'to', location_i+ loc_frac)
+                location = location_i + loc_frac
             locations[time] = location
             bar = int(location/notes_per_bar)
             music_locations[time] = [bar, location - (bar*notes_per_bar)]
@@ -443,7 +464,7 @@ class climate_music_maker:
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
         self.tracks[track]['music_locations'] = music_locations
-
+        #assert 0
 
     def _create_volumes_(self, track):
         """
@@ -522,6 +543,15 @@ class climate_music_maker:
         self.tracks[track]['named_notes'] = named_notes
 
 
+    def _location_to_time(self, location, track):
+        """
+        Short function to calculate a time from a location in the music.
+        """
+
+        time = self.tracks[track]['time_range'][0] + (location*self.tracks[track]['notes_per_beat']/self.tracks[track].get('beats_per_year',1))
+        #print(location, '->', time)
+        return time
+
     def _recalculate_data_(self, track):
         """
         Calculate the musical value in terms of it's data value.
@@ -533,6 +563,14 @@ class climate_music_maker:
                                        self.tracks[track]['music_range'])
             recalculated_data[time] = dat
         self.tracks[track]['recalc_data'] = recalculated_data
+
+        recalculated_times = {}
+        for time, location in self.tracks[track]['locations'].items():
+            duration =  self.tracks[track]['durations'][time]
+            loc2 = location + duration
+            recalculated_times[time] = [self._location_to_time(location,track), self._location_to_time(loc2, track)]
+
+        self.tracks[track]['recalc_times'] = recalculated_times
 
     def _modulate_channel_(self, track):
         """
@@ -568,6 +606,12 @@ class climate_music_maker:
         times =  sorted(self.tracks[track]['locations'].keys())
         notes_removed = 0
         t_m1 = -1
+
+        # Remove any instances of the same pitch & time (added by quantize)
+        #pitch_times = {}
+        #for i, time in enumerate(times):
+        #    pitch = self.tracks[track]['pitches'][time]
+
         for i, time in enumerate(times):
             print("_remove_doubles_", i, time)
             if i == 0:
@@ -598,6 +642,8 @@ class climate_music_maker:
                 notes_removed+=1
             else:
                 t_m1 = time
+
+                
         if self.debug:
             print("Removed:", notes_removed, 'notes out of', len(times))
 
@@ -629,6 +675,13 @@ class climate_music_maker:
                     volume=int(self.tracks[track]['volumes'][time]),
                     )
                 miditracks[track].append(note)
+                print(track_number, track, time,
+                    track_number, # Means nothing, is overwritten later.
+                    self.tracks[track]['channels'][time],
+                    pitch,
+                    self.tracks[track]['locations'][time],
+                    self.tracks[track]['durations'][time],
+                    int(self.tracks[track]['volumes'][time]))
 
         self.miditracks = miditracks
         save_midi(self.title, self.tempo, miditracks, self.output_midi)
@@ -655,7 +708,8 @@ class climate_music_maker:
         print('-----------------------')
         print('Times:')
         for time in self.globals['all_times']:
-            line = ' '.join(['t:', str(time), '\tscale:',
+            line = ' '.join(['t:', str(time),decimal_time_to_dtstr(time),
+                             '\tscale:',
                              self.tracks[track]['scales'].get(time, 'False'), ':',
                              str(self.tracks[track]['music_locations'].get(time, False)), ':'
                              ],)
