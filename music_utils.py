@@ -63,12 +63,12 @@ def save_midi(title, tempo, tracks, path):
             print( track_number, track_name, tracks[track_name][0].track)
             for note in tracks[track_name]:
                 print('Adding note:', 
-		            track_number, 
-					note.channel,
-                    note.pitch,
-                    note.time,
-                    note.duration,
-                    note.volume)
+		            '#', track_number, 
+                    'chan:', note.channel,
+                    'pitch:', note.pitch,
+                    'time:', note.time,
+                    'dur:', note.duration,
+                    'vol:', note.volume)
 				
                 MyMIDI.addNote(
                     track_number, #note.track,

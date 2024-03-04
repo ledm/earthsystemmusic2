@@ -37,6 +37,8 @@ def load_netcdf(track_dict, path):
 def load_csv(track_dict, path):
     """
     Load the data from a csv file.
+
+    Always loads first column as time, second column as data.
     """
     #print("load_csv: not implemented yet")
     #assert 0
@@ -93,6 +95,7 @@ def load_shelve(track_dict, path):
     shelve_data = sh['modeldata'][track_dict.data_key]
     sh.close()
     return shelve_data
+
 
 def apply_kwargs(track_dict, track_data, ):
     """
@@ -174,7 +177,7 @@ def calculate_moving_average(data, moving_average, debug = False):
     ######
     #
     #moving_average = track_dict['moving_average']
-    if moving_average in ['', [], None]:
+    if moving_average in ['', [], None, 'None',]:
         print('No moving_average needed.')
         return data
     if isinstance(moving_average, str):
@@ -185,7 +188,6 @@ def calculate_moving_average(data, moving_average, debug = False):
     if window_units not in ['days','months','years']:
         raise ValueError("calculate_moving_average: window_units not recognised"+str(window_units))
 
-    print("calculate_moving_average:", data)
     for t in sorted(data.keys()):
         if debug:
             print("calculate_moving_average:", t, ':',data[t])
@@ -232,7 +234,7 @@ def calculate_moving_average(data, moving_average, debug = False):
     else:
         print('calculate_moving_average: window not understood:',window_width, window_units)
         assert 0
-    print('output:', output)
+    #print('output:', output)
 
     return output
 
@@ -448,7 +450,8 @@ class climate_music_maker:
         number_dat = len(self.tracks[track]['data'].keys())
         ordered_times = sorted(list(self.tracks[track]['data'].keys()))
         for i, time in enumerate(ordered_times):
-            if time > self.tracks[track]['time_range'][1]: assert 0
+            if time > self.tracks[track]['time_range'][1]: 
+                assert 0
             dat = self.tracks[track]['data'][time]
             if i < number_dat -1:
                 dur = (ordered_times[i+1] - time)*(beats_per_year)/notes_per_beat
@@ -456,30 +459,30 @@ class climate_music_maker:
             if dur > max_duration: dur = max_duration
             durations[time] = dur
             location = (time - time_range[0])*(beats_per_year)/notes_per_beat
-            print(time,(time - time_range[0]),'->', location)
+            print('_create_locations_', time,(time - time_range[0]),'->', location)
             if quant:
                 location_i = int(location)
                 loc_frac = int((location - location_i)*quant)/quant
-                print('quantized:',location, 'to', location_i+ loc_frac)
+                print('_create_locations_, quantized:',location, 'to', location_i+ loc_frac)
                 location = location_i + loc_frac
             locations[time] = location
             bar = int(location/notes_per_bar)
             music_locations[time] = [bar, location - (bar*notes_per_bar)]
             all_times[time] = True
-            print(time,(time - time_range[0]),'->', location, music_locations[time])
+            print('_create_locations_', time,(time - time_range[0]),'->', location, music_locations[time])
         self.globals['all_times'].update(all_times)
         self.tracks[track]['locations'] = locations
         self.tracks[track]['durations'] = durations
         self.tracks[track]['music_locations'] = music_locations
-        #assert 0
 
     def _create_volumes_(self, track):
         """
         Create a dict for volumes from data.
         """
-        # Load track volume data.
+        # Load track volume settings.
         vel_paths = self.tracks[track].get('volume_paths', None)
-        vol_range = self.tracks[track].get('volume_range', 120)
+        vol_range = self.tracks[track].get('volume_range', [1, 129])
+        vol_data_range = self.tracks[track].get('volume_data_range', None)
 
         if not vel_paths:
             # No data is provided for volume, set a flat volume curve.
@@ -487,15 +490,25 @@ class climate_music_maker:
                 t:max(vol_range) for t in self.tracks[track]['data']['times']
             }
             return
+        
+        # Get volume moving average:
+        if 'volume_moving_average' in self.tracks[track].keys():
+            vol_moving_average = self.tracks[track]['volume_moving_average']
+        else:
+            vol_moving_average = self.tracks[track].get('moving_average', None)
 
         volumes_data = self._load_track_(track, vel_paths )
         volumes_data = self._apply_moving_average_(
                         volumes_data,
-                        self.tracks[track].get('moving_average', None))
+                        vol_moving_average)
+                        #)
 
         volumes_data = self._enforce_mask_(volumes_data, track)
         volumes_data_range = list(volumes_data.values())
-        volumes_data_range = [min(volumes_data_range), max(volumes_data_range)]
+        if vol_data_range:
+            volumes_data_range = vol_data_range
+        else:
+            volumes_data_range = [min(volumes_data_range), max(volumes_data_range)]
         volumes = {}
         for time, dat in volumes_data.items():
             volume = value_to_pitch(dat,
@@ -504,6 +517,7 @@ class climate_music_maker:
             if self.debug:
                 print("volume:", time, volume)
             volumes[time] = volume
+            #print(time, dat, volume)
         self.tracks[track]['volumes'] = volumes
 
     def _determine_scales_(self, track):
