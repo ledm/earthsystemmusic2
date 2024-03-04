@@ -9,8 +9,8 @@ import csv
 from dateutil.parser import parse as dt_parse
 from datetime import datetime
 
-from midiranges import instrument_range, instrument_channels, create_chord_list, pitch_to_named_note
-from music_utils import midinote, save_midi, folder
+from .midiranges import instrument_range, instrument_channels, create_chord_list, pitch_to_named_note
+from .music_utils import midinote, save_midi, folder
 
 
 chord_dict = create_chord_list()
@@ -254,11 +254,11 @@ class climate_music_maker:
         self.output_folder = folder(self.globals['output_path'])
         self.output_midi = ''.join([self.output_folder, '/',
                                     self.globals['name'], '.mid'])
+        self.output_recalc = folder(self.globals['output_path']+'/recalc/')
         self.debug = self.globals.get('debug', True)
         self.tracks = self.yml['tracks']
 
         self.beats_per_year = self.globals.get('beats_per_year', 1)
-
 
         for track, track_dict in self.tracks.items():
 
@@ -414,25 +414,32 @@ class climate_music_maker:
 
         It works like this:
         Time zero is allocated to be the first note of any in the piece.
-        The duration is set tp the minimum
+        The duration is set to the minimum
 
-        durations and locations are in music tempo units.
+        durations and locations are in music tempo units, ie 1 = 1 beat.
+
+        shift_by: adjusts time axes relative to each other. (units are decimal years).
         """
         #time_range[0] is out_time= 0
         time_range = self.tracks[track]['time_range']
         notes_per_beat = self.globals.get('notes_per_beat', 4)
         notes_per_beat = self.tracks[track].get('notes_per_beat', notes_per_beat)
+        shift_by = self.tracks[track].get('shift_by', 0.)
+        if shift_by: assert 0 # not yet implemented.
 
         beats_per_year = self.tracks[track].get('beats_per_year', 1)
         max_duration = 1. / notes_per_beat
         notes_per_bar = self.tracks[track].get('notes_per_bar', 4.) #(typically)
 
         quantize = self.tracks[track].get('quantize', False)
+        quant = 0
         if quantize in ['whole',  'semibreve']: quant = 0.25
         if quantize in ['half', 'minim']:quant = 0.5 # ie
         if quantize in ['quarter', 'crotchet']: quant = 1. # ie
         if quantize in ['eighth', 'quaver']: quant = 2. # ie
         if quantize in ['sixteenth', 'semi-quaver']: quant = 4. # ie
+        if quantize in ['thirtysecond', 'demi-semi-quaver']: quant = 4. # ie
+
 
         locations = {}
         durations = {}
@@ -571,6 +578,19 @@ class climate_music_maker:
             recalculated_times[time] = [self._location_to_time(location,track), self._location_to_time(loc2, track)]
 
         self.tracks[track]['recalc_times'] = recalculated_times
+        export_recalc_cvs = True
+        if export_recalc_cvs:
+            recalcfn = self.output_recalc+ self.title+'_'+track+'.csv'
+            print('writing recalc data:', recalcfn)
+            txt = 'dtimes, qtimes, data, recalc\n'
+            for t in sorted(recalculated_data.keys()):
+                txt = ''.join([ txt, str(t), ', ', str(recalculated_times[t][0]), ', ', str(self.tracks[track]['data'][t]), ', ', str(recalculated_data[t]), '\n',
+                                     str(t), ', ', str(recalculated_times[t][1]), ', ', str(self.tracks[track]['data'][t]), ', ', str(recalculated_data[t]), '\n'])
+            
+            outrecalc = open(recalcfn, 'w')
+            outrecalc.write(txt)
+            outrecalc.close()
+
 
     def _modulate_channel_(self, track):
         """
@@ -756,7 +776,7 @@ def ymltest():
     try:
         test_yml_fn = sys.argv[1]
     except:
-        #test_yml_fn = 'yml/test.yml'
+        test_yml_fn = 'yml/test.yml'
         pass
 
     yml = load_yml(test_yml_fn)

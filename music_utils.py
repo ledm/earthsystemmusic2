@@ -5,10 +5,16 @@ import platform
 
 
 def folder(name):
-    try:
+    """ This snippet takes a string, makes the folder and the string.
+        It also accepts lists of strings.
+    """
+    if isinstance(name, list):
+        name='/'.join(name)
+    if name[-1] != '/':
+        name = ''.join([name, '/'])
+    if not os.path.exists(name):
         os.makedirs(name)
-    except:
-        pass
+        #print('makedirs ', name)
     return name
 
 
@@ -56,6 +62,14 @@ def save_midi(title, tempo, tracks, path):
             # Add the notes.
             print( track_number, track_name, tracks[track_name][0].track)
             for note in tracks[track_name]:
+                print('Adding note:', 
+		            track_number, 
+					note.channel,
+                    note.pitch,
+                    note.time,
+                    note.duration,
+                    note.volume)
+				
                 MyMIDI.addNote(
                     track_number, #note.track,
                     note.channel,
