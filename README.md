@@ -4,11 +4,11 @@
 Earth System Music
 ===================
 
-This is a python toolkit that can  convert csv, netcdf into midi.
+Documentation is a work in Progress.
 
+This is a python toolkit that can  convert csv or simple netcdf into MIDI.
 This documentation assumes a basic knowledge of python, yaml and music theory. 
 
-Work in Progress.
 
 
 The bulk of the work is done via yaml files. 
@@ -16,8 +16,6 @@ The bulk of the work is done via yaml files.
 A typical Yaml file for this work would be composed of a "global" section
 which sets the global parameters, 
 followed by a tracks section, which includes settings for each track.
-
-E
 
 Below is a typical Global section:
 
